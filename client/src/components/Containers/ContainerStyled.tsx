@@ -13,6 +13,7 @@ export const Wrapper = styled.div`
 `;
 
 export const ContainerLeft = styled.div`
+  position: flex;
   width: 40%;
   padding: 20px;
   background-color: #15202b;
@@ -22,6 +23,7 @@ export const ContainerLeft = styled.div`
 `;
 
 export const ContainerRight = styled.div`
+  position: flex;
   width: 60%;
   padding: 20px;
   background-color: #15202b;

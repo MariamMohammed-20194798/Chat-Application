@@ -6,6 +6,21 @@ export const ConversationContainer = styled.div`
   overflow-y: scroll;
   margin-right: -1.5rem;
   margin-top: 0.1rem;
+
+  /* Scrollbar styles */
+  &::-webkit-scrollbar {
+    width: 0.9rem;
+    position: fixed;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 0.4rem;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+  }
 `;
 
 export const Container = styled.div`
@@ -13,7 +28,7 @@ export const Container = styled.div`
   width: 20rem;
   background-color: #273746;
   border-radius: 0.6rem;
-  padding: 0.4rem;
+  padding: 0.1rem;
   margin: 10px;
   float: left;
   &:after {
@@ -32,8 +47,8 @@ export const Container2 = styled.div`
   float: right;
   border-color: #ccc;
   background-color: #075e54;
-  border-radius: 0.5rem;
-  padding: 0.4rem;
+  border-radius: 0.6rem;
+  padding: 0.1rem;
   margin: 10px;
   &:after {
     content: "";
@@ -75,10 +90,12 @@ export const Img2 = styled.img`
 
 export const TimeRight = styled.span`
   float: right;
+  margin-right: 1rem;
   color: #aaa;
 `;
 export const TimeLeft = styled.span`
   float: left;
+  margin-left: 0.5rem;
   color: #999;
 `;
 

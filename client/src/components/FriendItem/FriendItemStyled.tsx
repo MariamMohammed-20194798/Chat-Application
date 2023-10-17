@@ -10,10 +10,6 @@ export const Div = styled.div`
   &:hover {
     background-color: #192734;
   }
-  @media (min-width: 1281px) {
-    padding: 0;
-    margin-left: -1.7rem;
-  }
 `;
 
 export const P = styled.p`

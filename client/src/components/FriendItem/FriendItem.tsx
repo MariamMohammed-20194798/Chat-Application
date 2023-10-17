@@ -47,7 +47,7 @@ const FriendItem: React.FC<ChildProps> = ({
           </div>
           <div style={{ width: "100%" }}>
             <P>{name}</P>
-            <P2>{lastMsg}</P2>
+            <P2>Hey</P2>
           </div>
           {/* <div>
             <Button>Follow</Button>
