@@ -7,6 +7,7 @@ export const ConversationContainer = styled.div`
   margin-right: -1.5rem;
   margin-top: 0.1rem;
 `;
+
 export const Container = styled.div`
   position: flex;
   width: 20rem;

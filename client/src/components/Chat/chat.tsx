@@ -51,10 +51,8 @@ const ConversationComponent: React.FC = () => {
       const response = await instance.get(
         `/conversations/${authorId._id}/${friendId._id}`
       );
-
       setConversation(response.data.conversation);
-      const msg = response.data.conversation.messages.slice(-1).message;
-      lastMsg(msg);
+      lastMsg(response.data.conversation.messages.slice(-1)[0].message);
     } catch (error) {
       console.error("Error fetching conversation:", error);
     }
@@ -62,12 +60,15 @@ const ConversationComponent: React.FC = () => {
 
   const sendMessage = async () => {
     try {
-      await instance.post(`msgs/${authorId._id}/${friendId._id}/send-message`, {
-        message: newMessage,
-      });
-      socket.emit("send_message", newMessage);
+      const res = await instance.post(
+        `msgs/${authorId._id}/${friendId._id}/send-message`,
+        {
+          message: newMessage,
+        }
+      );
+      console.log(res.data.message);
+      socket.emit("send_message", res.data.message);
       setNewMessage("");
-      fetchConversation();
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -80,14 +81,18 @@ const ConversationComponent: React.FC = () => {
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      fetchConversation();
-      console.log(data);
+      // Update the conversation state with the received message
+      setConversation((prevConversation) => {
+        if (prevConversation) {
+          return {
+            ...prevConversation,
+            messages: [...prevConversation.messages, data],
+          };
+        }
+        return null;
+      });
     });
-    return () => {
-      socket.off("receive_message");
-    };
   }, [socket]);
-
   return (
     <ConversationContainer>
       <div>

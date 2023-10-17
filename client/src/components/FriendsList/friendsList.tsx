@@ -27,6 +27,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
         const res = await instance.get("users/getAllUsers");
         if (res.data.status === "success") {
           setFriends(res.data.data.data);
+          console.log(res.data.data.data);
         }
       } catch (err) {
         console.log(err);
@@ -49,7 +50,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
                 name={friend.username}
                 userImage={def}
                 user={friend}
-                msg="Hello"
+                msg={friend.messages}
               />
             </Li>
           ))}
