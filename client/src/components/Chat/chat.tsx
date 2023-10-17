@@ -21,6 +21,7 @@ import {
 } from "./chatStyled";
 
 const socket = io("http://localhost:8000");
+
 interface Message {
   id: number;
   authorId: string;
