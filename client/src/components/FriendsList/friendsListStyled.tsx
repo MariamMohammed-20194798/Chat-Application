@@ -1,15 +1,14 @@
 import styled from "styled-components";
 
 export const DivFollow = styled.div`
-  width: 26.5rem;
-  @media (min-width: 1281px) {
-    width: 31.7rem;
-  }
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 export const Container = styled.div`
   height: 54rem;
   overflow-y: scroll;
+
   /* Scrollbar styles */
   &::-webkit-scrollbar {
     width: 0.8rem;
@@ -17,6 +16,7 @@ export const Container = styled.div`
   &::-webkit-scrollbar-thumb {
     background-color: #888;
     border-radius: 0.4rem;
+    margin-left: 3rem;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -26,5 +26,9 @@ export const Container = styled.div`
 
 export const Li = styled.li`
   list-style: none;
-  margin-right: 1rem;
+`;
+
+export const Ul = styled.ul`
+  margin-top: -1rem;
+  margin-right: 1.3rem;
 `;

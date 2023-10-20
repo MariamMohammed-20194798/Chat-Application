@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from "express";
+import { RequestHandler } from "express";
 import { catchAsync } from "../utils/catchAsync";
 import User from "../models/userModel";
 import Msg from "../models/messageModel";
 import Conversation from "../models/conversationModel";
 import { AppError } from "../utils/appError";
 
-export const sendMsgToFriend = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+export const sendMsgToFriend: RequestHandler = catchAsync(
+  async (req, res, next) => {
     try {
       const authorId = req.params.authorId;
       const friendId = req.params.friendId;
@@ -34,7 +34,7 @@ export const sendMsgToFriend = catchAsync(
       if (!conversation) {
         conversation = new Conversation({
           participants: [authorId, friendId],
-          messages: [newMessage._id],
+          messages: [newMessage],
         });
       } else {
         conversation.messages.push(newMessage._id);
@@ -44,6 +44,7 @@ export const sendMsgToFriend = catchAsync(
 
       // Add the message to the author's and friend's message history
       author.messages.push(newMessage._id);
+
       friend.messages.push(newMessage._id);
 
       await author.save();
@@ -59,8 +60,8 @@ export const sendMsgToFriend = catchAsync(
 );
 
 // Function to get a conversation between author and friend
-export const getConversation = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+export const getConversation: RequestHandler = catchAsync(
+  async (req, res, next) => {
     try {
       const { authorId, friendId } = req.params;
 
@@ -88,8 +89,8 @@ export const getConversation = catchAsync(
   }
 );
 
-export const getConvById = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+export const getConvById: RequestHandler = catchAsync(
+  async (req, res, next) => {
     const { id } = req.params;
 
     const conv = await Conversation.findById(id);
@@ -105,8 +106,8 @@ export const getConvById = catchAsync(
     });
   }
 );
-export const getMessageById = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+export const getMessageById: RequestHandler = catchAsync(
+  async (req, res, next) => {
     const { id } = req.params;
 
     const message = await Msg.findById(id);

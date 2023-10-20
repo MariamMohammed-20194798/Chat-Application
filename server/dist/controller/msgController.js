@@ -31,7 +31,7 @@ exports.sendMsgToFriend = (0, catchAsync_1.catchAsync)(async (req, res, next) =>
         if (!conversation) {
             conversation = new conversationModel_1.default({
                 participants: [authorId, friendId],
-                messages: [newMessage._id],
+                messages: [newMessage],
             });
         }
         else {

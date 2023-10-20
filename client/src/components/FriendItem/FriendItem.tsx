@@ -3,7 +3,6 @@ import { P, P2, Border, DivImg, Div } from "./FriendItemStyled";
 import { Link } from "react-router-dom";
 import { useDataStore } from "../../Storage/userStorage";
 import { useLastmsgStore } from "../../Storage/lastMsgStore";
-import instance from "../../axios";
 type ChildProps = {
   _id: string;
   userImage: string;
@@ -20,7 +19,6 @@ const FriendItem: React.FC<ChildProps> = ({
 }) => {
   // const [lastMsg, setLastMsg] = useState("");
   const friendId = useDataStore((state: any) => state.setData);
-
   const lastMsg = useLastmsgStore((state: any) => state.lastMsg);
   const handleClick = () => {
     friendId(user);
@@ -28,13 +26,11 @@ const FriendItem: React.FC<ChildProps> = ({
   useEffect(() => {
     const fetchLastMsg = async () => {
       try {
-        //const res = await instance.get(`msgs/${msg.slice(-1)}`);
-
-        console.log(lastMsg);
       } catch (error) {
         console.error("Error fetching conversation:", error);
       }
     };
+
     fetchLastMsg();
   }, [friendId]);
 

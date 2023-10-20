@@ -12,22 +12,24 @@ const SearchBar: React.FC = () => {
   };
 
   return (
-    <Form>
-      <DivSearch>
-        <DivIcon>
-          <IoIosSearch />
-        </DivIcon>
-        <div style={{ width: "100%" }}>
-          <Input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={searchHandler}
-          />
-        </div>
-      </DivSearch>
+    <>
+      <Form>
+        <DivSearch>
+          <DivIcon>
+            <IoIosSearch />
+          </DivIcon>
+          <div style={{ width: "100%" }}>
+            <Input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={searchHandler}
+            />
+          </div>
+        </DivSearch>
+      </Form>
       <FriendsList searchQuery={searchQuery} />
-    </Form>
+    </>
   );
 };
 export default SearchBar;

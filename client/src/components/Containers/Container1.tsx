@@ -5,9 +5,10 @@ import {
   ContainerRight,
   H1,
   Div,
+  Strong,
 } from "./ContainerStyled";
 import SearchBar from "../SearchBar/searchBar";
-import { AiFillWechat } from "react-icons/ai";
+import { RiChatSmile3Fill } from "react-icons/ri";
 
 const Container1: React.FC = (props) => {
   return (
@@ -17,7 +18,8 @@ const Container1: React.FC = (props) => {
       </ContainerLeft>
       <ContainerRight>
         <Div>
-          <AiFillWechat size={50} color="white" />
+          <Strong>Chatty </Strong>
+          <RiChatSmile3Fill size={38} color="rgb(0, 128, 128)" />
         </Div>
         <H1>Start Chatting With Your Friends.</H1>
       </ContainerRight>

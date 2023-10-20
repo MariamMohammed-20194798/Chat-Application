@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AiFillWechat } from "react-icons/ai";
+import { RiChatSmile3Fill } from "react-icons/ri";
+import { LinearProgress } from "@mui/material";
 import {
   Container,
   Strong,
@@ -10,20 +11,23 @@ import {
   Btn,
   Div,
   P,
+  DivSpinner,
 } from "./authPagesStyled";
 import { useAuthorDataStore } from "../Storage/authorStorage";
 import instance from "../axios";
+import { Spinner } from "../components/Spinner/spinner";
 
 const LoginPage: React.FC = () => {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setLoading] = useState(false);
   const setAuthor = useAuthorDataStore((state: any) => state.setAuthorData);
 
   const joinRoom = async (event: any) => {
     try {
-      event.preventDefault();
+      setLoading(false);
       setErrorMsg("");
       if (!email || !password) setErrorMsg("Email and Password Are Required.");
       const res = await instance.post("users/login", {
@@ -35,6 +39,7 @@ const LoginPage: React.FC = () => {
         const user = res.data.data.user;
         setAuthor(user);
         nav("/home");
+        setLoading(true);
       }
     } catch (err: any) {
       if (err.response) {
@@ -52,9 +57,14 @@ const LoginPage: React.FC = () => {
   return (
     <Container>
       <Div>
-        <AiFillWechat size={45} color="rgb(30, 155, 270)" />
+        <Strong>Welcome To Chatty </Strong>
+        <RiChatSmile3Fill size={35} color="rgb(0, 128, 128)" />
       </Div>
-      <Strong>Join Chat Application</Strong>
+      {isLoading ? (
+        <DivSpinner>
+          <Spinner />
+        </DivSpinner>
+      ) : null}
       <InputText
         type="text"
         id="email"

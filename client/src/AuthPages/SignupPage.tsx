@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AiFillWechat } from "react-icons/ai";
+import { RiChatSmile3Fill } from "react-icons/ri";
+
 import {
   Container,
   Strong,
   LinkDiv,
   InputText,
-  Text2,
+  Text,
   Btn,
   Div,
   P,
@@ -51,9 +52,10 @@ const SignupPage: React.FC = () => {
   return (
     <Container>
       <Div>
-        <AiFillWechat size={45} color="rgb(30, 155, 270)" />
+        <Strong>Chatty </Strong>
+        <RiChatSmile3Fill size={35} color="rgb(0, 128, 128)" />
       </Div>
-      <Strong>Create An Account</Strong>
+
       <InputText
         type="text"
         id="username"
@@ -83,9 +85,9 @@ const SignupPage: React.FC = () => {
       />
       {errorMsg && <P>{errorMsg}</P>}
       <Btn onClick={joinRoom}>CREATE</Btn>
-      <Text2>
+      <Text>
         Alreadt Have An Account? <LinkDiv to="/">Signin</LinkDiv>
-      </Text2>
+      </Text>
     </Container>
   );
 };

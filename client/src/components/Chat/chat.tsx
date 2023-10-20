@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useAuthorDataStore } from "../../Storage/authorStorage";
 import { useDataStore } from "../../Storage/userStorage";
-import { useLastmsgStore } from "../../Storage/lastMsgStore";
 import defaultImg from "./../../imgs/default.jpg";
+import { Spinner } from "../Spinner/spinner";
 import instance from "../../axios";
 import io from "socket.io-client";
 import {
@@ -18,14 +18,13 @@ import {
   Btn,
   AiOutlineSendIcon,
   ConversationContainer,
+  DivSpinner,
 } from "./chatStyled";
 
 const socket = io("http://localhost:8000");
 
 interface Message {
   id: number;
-  authorId: string;
-  friendId: string;
   message: string;
   friend: string;
   createdAt: string;
@@ -38,9 +37,10 @@ interface Conversation {
 const ConversationComponent: React.FC = () => {
   const authorId = useAuthorDataStore((state: any) => state.authorData);
   const friendId = useDataStore((state: any) => state.data);
-  const lastMsg = useLastmsgStore((state: any) => state.setLastMsg);
+  //const lastMsg = useLastmsgStore((state: any) => state.setLastMsg);
   const [newMessage, setNewMessage] = useState("");
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchConversation();
@@ -48,15 +48,17 @@ const ConversationComponent: React.FC = () => {
 
   const fetchConversation = async () => {
     try {
+      setLoading(true);
       setConversation(null);
       const response = await instance.get(
         `/conversations/${authorId._id}/${friendId._id}`
       );
       setConversation(response.data.conversation);
-      lastMsg(response.data.conversation.messages.slice(-1)[0].message);
+      //lastMsg(response.data.conversation.messages.slice(-1)[0].message);
     } catch (error) {
       console.error("Error fetching conversation:", error);
     }
+    setLoading(false);
   };
 
   const sendMessage = async () => {
@@ -67,7 +69,7 @@ const ConversationComponent: React.FC = () => {
           message: newMessage,
         }
       );
-      console.log(res.data.message);
+
       socket.emit("send_message", res.data.message);
       setNewMessage("");
     } catch (error) {
@@ -130,6 +132,11 @@ const ConversationComponent: React.FC = () => {
           <AiOutlineSendIcon />
         </Btn>
       </Div>
+      {isLoading ? (
+        <DivSpinner>
+          <Spinner />
+        </DivSpinner>
+      ) : null}
     </ConversationContainer>
   );
 };

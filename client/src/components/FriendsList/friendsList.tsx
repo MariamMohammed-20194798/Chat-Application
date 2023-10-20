@@ -1,6 +1,6 @@
 // FriendsList.tsx
 import React, { useState, useEffect } from "react";
-import { DivFollow, Container, Li } from "./friendsListStyled";
+import { DivFollow, Container, Li, Ul } from "./friendsListStyled";
 import FriendItem from "../FriendItem/FriendItem";
 import def from "./../../imgs/default.jpg";
 import instance from "../../axios";
@@ -42,7 +42,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
   return (
     <DivFollow>
       <Container>
-        <ul>
+        <Ul>
           {filteredFriends.map((friend) => (
             <Li key={friend._id}>
               <FriendItem
@@ -54,7 +54,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
               />
             </Li>
           ))}
-        </ul>
+        </Ul>
       </Container>
     </DivFollow>
   );

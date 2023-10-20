@@ -17,24 +17,22 @@ import { useDataStore } from "../../Storage/userStorage";
 const RightHeader: React.FC = () => {
   const data = useDataStore((state: any) => state.data);
   return (
-    <div>
-      <Div>
-        <div>
-          <DivImg alt="user" src={defaultImg} />
-        </div>
-        <div style={{ width: "100%" }}>
-          <P>{data.username}</P>
-          <P2>online now</P2>
-        </div>
+    <Div>
+      <div>
+        <DivImg alt="user" src={defaultImg} />
+      </div>
+      <div style={{ width: "100%" }}>
+        <P>{data.username}</P>
+        <P2>online</P2>
+      </div>
 
-        <DivIconSearch>
-          <IoIosSearch />
-        </DivIconSearch>
-        <DivIcon>
-          <FiMoreVertical />
-        </DivIcon>
-      </Div>
-    </div>
+      <DivIconSearch>
+        <IoIosSearch />
+      </DivIconSearch>
+      <DivIcon>
+        <FiMoreVertical />
+      </DivIcon>
+    </Div>
   );
 };
 export default RightHeader;

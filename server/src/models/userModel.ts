@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 
-interface User extends Document {
+export interface IUser extends Document {
   username: string;
   email: string;
   photo: string;
@@ -12,7 +12,7 @@ interface User extends Document {
   correctPassword: Function;
 }
 
-const userSchema: Schema<User> = new mongoose.Schema<User>({
+const userSchema: Schema<IUser> = new mongoose.Schema<IUser>({
   username: {
     type: String,
     required: [true, "Username is required"],
@@ -57,6 +57,6 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-const User = mongoose.model<User>("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
 
 export default User;

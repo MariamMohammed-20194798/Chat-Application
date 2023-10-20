@@ -1,11 +1,9 @@
 import React from "react";
-import styled from "styled-components";
 import LoginPage from "./AuthPages/loginPage";
 import SignupPage from "./AuthPages/SignupPage";
 import Container1 from "./components/Containers/Container1";
 import { Routes, Route } from "react-router-dom";
 import Container2 from "./components/Containers/Container2";
-
 const App: React.FC = () => {
   return (
     <div>

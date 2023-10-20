@@ -11,9 +11,9 @@ const userModel_1 = __importDefault(require("../models/userModel"));
 const appError_1 = require("../utils/appError");
 const catchAsync_1 = require("../utils/catchAsync");
 cloudinary.config({
-    cloud_name: "dwjot1zhy",
-    api_key: "562937548765246",
-    api_secret: "XlZxwlVoZndfWq3OUNP58rpHXZM",
+    cloud_name: process.env.cloud_name,
+    api_key: process.env.api_key,
+    api_secret: process.env.api_secret,
 });
 const multerStorage = multer_1.default.memoryStorage();
 const multerFilter = (req, file, cb) => {
@@ -73,12 +73,12 @@ exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     });
 });
 exports.getAll = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    const doc = await userModel_1.default.find();
+    const users = await userModel_1.default.find();
     res.status(200).json({
         status: "success",
-        results: doc.length,
+        results: users.length,
         data: {
-            data: doc,
+            data: users,
         },
     });
 });

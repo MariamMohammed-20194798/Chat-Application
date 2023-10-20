@@ -4,13 +4,14 @@ const cloudinary = require("cloudinary").v2;
 import User from "../models/userModel";
 import { AppError } from "../utils/appError";
 import { catchAsync } from "../utils/catchAsync";
-import { RequestHandler, Request } from "express";
+import { RequestHandler, Request, Response, NextFunction } from "express";
 import { CustomRequest } from "./customRequest";
+import { CustomRequestUser } from "./customRequestUser";
 
 cloudinary.config({
-  cloud_name: "dwjot1zhy",
-  api_key: "562937548765246",
-  api_secret: "XlZxwlVoZndfWq3OUNP58rpHXZM",
+  cloud_name: process.env.cloud_name,
+  api_key: process.env.api_key,
+  api_secret: process.env.api_secret,
 });
 
 const multerStorage = multer.memoryStorage();
@@ -92,12 +93,12 @@ export const updateMe: RequestHandler = catchAsync(
 );
 
 export const getAll: RequestHandler = catchAsync(async (req, res, next) => {
-  const doc = await User.find();
+  const users = await User.find();
   res.status(200).json({
     status: "success",
-    results: doc.length,
+    results: users.length,
     data: {
-      data: doc,
+      data: users,
     },
   });
 });

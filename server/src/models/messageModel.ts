@@ -5,8 +5,6 @@ interface IMessage extends Document {
   author: Schema.Types.ObjectId;
   friend: Schema.Types.ObjectId;
   message: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const messageSchema = new Schema<IMessage>(

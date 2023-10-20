@@ -5,8 +5,7 @@ export const Div = styled.div`
   transition: all 0.4s;
   align-items: center;
   display: flex;
-  padding: 1rem;
-  margin-left: -2.4rem;
+  margin-left: -2rem;
   &:hover {
     background-color: #192734;
   }
@@ -15,10 +14,9 @@ export const Div = styled.div`
 export const P = styled.p`
   color: white;
   font-size: 1.7rem;
-  font-weight: 500;
+  margin-bottom: -1rem;
   @media (min-width: 1281px) {
-    font-size: 1.4rem;
-    font-weight: 400;
+    font-size: 1.2rem;
   }
 `;
 
@@ -51,6 +49,7 @@ export const DivImg = styled.img`
   border-radius: 50%;
   margin-top: 0.9rem;
   margin-right: 1.3rem;
+  border: 2px solid rgb(0, 128, 128);
   @media (min-width: 1281px) {
     width: 3.3rem;
     height: 3.3rem;

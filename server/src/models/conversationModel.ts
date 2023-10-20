@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Schema, Document } from "mongoose";
+
 interface ConversationSchema extends Document {
   participants: mongoose.Schema.Types.ObjectId[];
   messages: mongoose.Schema.Types.ObjectId[];

@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const Div = styled.div`
   background-color: #192734;
   margin-top: -1.4rem;
-  margin-left: -1.4rem;
+  margin-left: -1.5rem;
   margin-right: -1.4rem;
   align-items: center;
   display: flex;
@@ -12,12 +12,14 @@ export const Div = styled.div`
 export const P = styled.p`
   color: white;
   font-size: 1.5rem;
+  margin-bottom: -1rem;
+  margin-top: 0.5rem;
 `;
 export const P2 = styled.p`
   color: #97a4af;
   font-weight: bold;
-  font-size: 1.1rem;
-  margin-bottom: "";
+  font-size: 1rem;
+  margin-bottom: 1rem;
 `;
 
 export const Button = styled.button`
@@ -36,12 +38,11 @@ export const Button = styled.button`
 `;
 
 export const DivImg = styled.img`
-  width: 4rem;
-  height: 4rem;
+  width: 3.7rem;
+  height: 3.7rem;
   border-radius: 50%;
-  margin-top: 0.6rem;
   margin-right: 1rem;
-  margin-left: 1rem;
+  margin-left: 1.5rem;
 `;
 
 export const Border = styled.div`
@@ -54,7 +55,7 @@ export const DivIcon = styled.div`
   top: 3px;
   font-size: 2rem;
   &:hover {
-    color: #1da1f2;
+    color: rgb(0, 128, 128);
   }
 `;
 export const DivIconSearch = styled.div`
@@ -64,6 +65,6 @@ export const DivIconSearch = styled.div`
   top: 3px;
   font-size: 2rem;
   &:hover {
-    color: #1da1f2;
+    color: rgb(0, 128, 128);
   }
 `;
