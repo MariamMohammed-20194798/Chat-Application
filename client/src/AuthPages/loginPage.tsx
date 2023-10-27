@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiChatSmile3Fill } from "react-icons/ri";
-import { LinearProgress } from "@mui/material";
+import io from "socket.io-client";
 import {
   Container,
   Strong,
@@ -16,6 +16,8 @@ import {
 import { useAuthorDataStore } from "../Storage/authorStorage";
 import instance from "../axios";
 import { Spinner } from "../components/Spinner/spinner";
+
+const socket = io("http://localhost:8000");
 
 const LoginPage: React.FC = () => {
   const nav = useNavigate();
@@ -37,8 +39,9 @@ const LoginPage: React.FC = () => {
 
       if (res.data.status === "success") {
         const user = res.data.data.user;
+        socket.emit("userOnline", user);
         setAuthor(user);
-        nav("/home");
+        nav("/", { replace: true });
         setLoading(true);
       }
     } catch (err: any) {

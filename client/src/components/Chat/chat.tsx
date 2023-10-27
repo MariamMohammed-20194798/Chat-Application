@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuthorDataStore } from "../../Storage/authorStorage";
 import { useDataStore } from "../../Storage/userStorage";
-import defaultImg from "./../../imgs/default.jpg";
 import { Spinner } from "../Spinner/spinner";
 import instance from "../../axios";
 import io from "socket.io-client";
@@ -20,13 +19,16 @@ import {
   ConversationContainer,
   DivSpinner,
 } from "./chatStyled";
+import RightHeader from "../RightHeader/RightHeader";
+import { useLastMsgStore } from "../../Storage/lastMsgStore";
+import { useParams } from "react-router-dom";
 
 const socket = io("http://localhost:8000");
 
 interface Message {
   id: number;
-  message: string;
-  friend: string;
+  text: string;
+  to: string;
   createdAt: string;
 }
 
@@ -35,56 +37,62 @@ interface Conversation {
 }
 
 const ConversationComponent: React.FC = () => {
+  const { receiverId } = useParams();
+
   const authorId = useAuthorDataStore((state: any) => state.authorData);
   const friendId = useDataStore((state: any) => state.data);
-  //const lastMsg = useLastmsgStore((state: any) => state.setLastMsg);
+  const setLastMsg = useLastMsgStore((state: any) => state.setLastMsg);
   const [newMessage, setNewMessage] = useState("");
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isLoading, setLoading] = useState(true);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchConversation();
-  }, [authorId._id, friendId._id]);
+  }, [authorId?._id, friendId?._id]);
 
   const fetchConversation = async () => {
     try {
       setLoading(true);
       setConversation(null);
       const response = await instance.get(
-        `/conversations/${authorId._id}/${friendId._id}`
+        `/room/${authorId?._id}/${friendId?._id}`
       );
-      setConversation(response.data.conversation);
-      //lastMsg(response.data.conversation.messages.slice(-1)[0].message);
+
+      setConversation(response.data.room);
+      const lastMessage =
+        response.data.conversation.messages.slice(-1)[0].message;
+      setLastMsg({ text: lastMessage, id: friendId?._id });
     } catch (error) {
       console.error("Error fetching conversation:", error);
     }
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [conversation?.messages]);
+
   const sendMessage = async () => {
     try {
       const res = await instance.post(
-        `msgs/${authorId._id}/${friendId._id}/send-message`,
-        {
-          message: newMessage,
-        }
+        `room/${authorId?._id}/${friendId?._id}/send-message`,
+        { message: newMessage }
       );
-
       socket.emit("send_message", res.data.message);
+      setLastMsg({ text: newMessage, id: receiverId });
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
 
-  const convertToTime = (createdAt: string) => {
-    const date = new Date(createdAt);
-    return date.toLocaleTimeString();
-  };
-
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      // Update the conversation state with the received message
+      setLastMsg({ text: data.text, id: data.from });
       setConversation((prevConversation) => {
         if (prevConversation) {
           return {
@@ -96,48 +104,57 @@ const ConversationComponent: React.FC = () => {
       });
     });
   }, [socket]);
+
+  const convertToTime = (createdAt: string) => {
+    const date = new Date(createdAt);
+    return date.toLocaleTimeString();
+  };
+
   return (
-    <ConversationContainer>
-      <div>
-        {conversation?.messages.map((message) => (
-          <React.Fragment key={message.id}>
-            {message.friend === friendId._id ? (
-              <Container2>
-                <Img2 src={defaultImg} alt="Avatar" />
-                <P>{message.message}</P>
-                <TimeLeft>{convertToTime(message.createdAt)}</TimeLeft>
-              </Container2>
-            ) : (
-              <Container>
-                <Img src={defaultImg} alt="Avatar" />
-                <P>{message.message}</P>
-                <TimeRight>{convertToTime(message.createdAt)}</TimeRight>
-              </Container>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-      <Div>
-        <Input
-          type="text"
-          id="msg"
-          value={newMessage}
-          placeholder="Message"
-          onChange={(e) => {
-            e.preventDefault();
-            setNewMessage(e.target.value);
-          }}
-        />
-        <Btn onClick={sendMessage}>
-          <AiOutlineSendIcon />
-        </Btn>
-      </Div>
-      {isLoading ? (
-        <DivSpinner>
-          <Spinner />
-        </DivSpinner>
-      ) : null}
-    </ConversationContainer>
+    <>
+      <RightHeader />
+      <ConversationContainer ref={chatContainerRef}>
+        <div>
+          {conversation?.messages.map((message) => (
+            <React.Fragment key={message.id}>
+              {message.to === friendId?._id ? (
+                <Container2>
+                  <Img2 src={authorId?.photo} alt="Avatar" />
+                  <P>{message.text}</P>
+                  <TimeLeft>{convertToTime(message.createdAt)}</TimeLeft>
+                </Container2>
+              ) : (
+                <Container>
+                  <Img src={friendId?.photo} alt="Avatar" />
+                  <P>{message.text}</P>
+                  <TimeRight>{convertToTime(message.createdAt)}</TimeRight>
+                </Container>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <Div>
+          <Input
+            type="text"
+            id="msg"
+            value={newMessage}
+            placeholder="Message"
+            onChange={(e) => {
+              e.preventDefault();
+              setNewMessage(e.target.value);
+            }}
+          />
+          <Btn onClick={sendMessage}>
+            <AiOutlineSendIcon />
+          </Btn>
+        </Div>
+        {isLoading ? (
+          <DivSpinner>
+            <Spinner />
+          </DivSpinner>
+        ) : null}
+      </ConversationContainer>
+    </>
   );
 };
 

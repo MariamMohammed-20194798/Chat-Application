@@ -1,26 +1,14 @@
 import styled from "styled-components";
 
-export const Wrapper = styled.div`
-  display: grid;
-  height: 97vh;
-  grid-template-columns: 40% 60%;
-  @media (min-width: 1281px) {
-    grid-template-columns: 30% 70%;
-    margin-left: 15rem;
-    margin-right: 15rem;
-    margin-top: 1rem;
-  }
-`;
-
-export const ContainerLeft = styled.div`
-  padding: 15px 0 0 10px;
-  background-color: #15202b;
-`;
-
 export const ContainerRight = styled.div`
+  height: 93.5vh;
+  width: 60%;
   padding: 20px;
   background-color: #15202b;
-  border-left: 0.3rem solid rgba(204, 204, 204, 0.2);
+  @media (min-width: 1281px) {
+    width: 70%;
+    height: 92.5vh;
+  }
 `;
 
 export const Div = styled.div`

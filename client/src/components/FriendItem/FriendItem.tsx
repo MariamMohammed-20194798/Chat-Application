@@ -1,56 +1,76 @@
-import { useEffect, useState } from "react";
-import { P, P2, Border, DivImg, Div } from "./FriendItemStyled";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDataStore } from "../../Storage/userStorage";
-import { useLastmsgStore } from "../../Storage/lastMsgStore";
+import { useAuthorDataStore } from "../../Storage/authorStorage";
+import { useLastMsgStore } from "../../Storage/lastMsgStore";
+import { DivImg, Div, OnlineDiv, P2, P3 } from "./FriendItemStyled";
+import instance from "../../axios";
+
 type ChildProps = {
   _id: string;
   userImage: string;
   name: string;
   user: any;
-  msg: string;
+  isOnline: boolean;
+  moveChatToFront: Function;
 };
+
 const FriendItem: React.FC<ChildProps> = ({
   _id,
   name,
   userImage,
   user,
-  msg,
+  isOnline,
+  moveChatToFront,
 }) => {
-  // const [lastMsg, setLastMsg] = useState("");
-  const friendId = useDataStore((state: any) => state.setData);
-  const lastMsg = useLastmsgStore((state: any) => state.lastMsg);
-  const handleClick = () => {
-    friendId(user);
-  };
+  const author = useAuthorDataStore((state) => state.authorData);
+  const setFriend = useDataStore((state) => state.setData);
+  const lastMessageStore = useLastMsgStore((state) => state.lastMsg);
+  const [lastMsg, setLastMsg] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchLastMsg = async () => {
+    const fetchData = async () => {
       try {
-      } catch (error) {
-        console.error("Error fetching conversation:", error);
+        const res = await instance.get("room/allRooms");
+        const msgs = res.data.data;
+        const message = msgs.find(
+          (msg: any) =>
+            (msg.from === author._id && msg.to === _id) ||
+            (msg.to === author._id && msg.from === _id)
+        );
+        if (message) {
+          setLastMsg(message.text);
+        }
+      } catch (err) {
+        console.log(err);
       }
     };
+    fetchData();
+  }, []);
 
-    fetchLastMsg();
-  }, [friendId]);
+  useEffect(() => {
+    if (lastMessageStore.id === _id) {
+      setLastMsg(lastMessageStore.text);
+      moveChatToFront(_id);
+    }
+  }, [lastMessageStore]);
+
+  const handleClick = () => {
+    setFriend(user);
+  };
 
   return (
     <div>
-      <Link to="/room" style={{ textDecoration: "none" }}>
-        <Div onClick={handleClick}>
-          <div>
-            <DivImg alt="user" src={userImage} />
-          </div>
-          <div style={{ width: "100%" }}>
-            <P>{name}</P>
-            <P2>Hey</P2>
-          </div>
-          {/* <div>
-            <Button>Follow</Button>
-          </div> */}
-        </Div>
-      </Link>
-      <Border />
+      <Div onClick={handleClick}>
+        <div>
+          <DivImg alt="user" src={userImage} />
+        </div>
+        {isOnline && <OnlineDiv />}
+        <div style={{ width: "100%" }}>
+          <P3>{name}</P3>
+          {lastMsg ? <P2>{lastMsg}</P2> : <P3>{lastMsg}</P3>}
+        </div>
+      </Div>
     </div>
   );
 };

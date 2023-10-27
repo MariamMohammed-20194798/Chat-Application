@@ -1,10 +1,10 @@
 import styled from "styled-components";
 
 export const Div = styled.div`
-  background-color: #192734;
+  background-color: #15202b;
   margin-top: -1.4rem;
-  margin-left: -1.5rem;
-  margin-right: -1.4rem;
+  margin-left: -1.4rem;
+  margin-right: -1.5rem;
   align-items: center;
   display: flex;
 `;

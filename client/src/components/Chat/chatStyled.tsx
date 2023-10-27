@@ -23,8 +23,12 @@ export const ConversationContainer = styled.div`
   }
 `;
 
+export const DivMsg = styled.div`
+  width: 100%;
+`;
 export const Container = styled.div`
-  position: flex;
+  flex-direction: row-reverse;
+  position: relative;
   width: 50%;
   background-color: #273746;
   border-radius: 0.6rem;
@@ -35,13 +39,10 @@ export const Container = styled.div`
     clear: both;
     display: table;
   }
-  @media (min-width: 1281px) {
-    width: 35rem;
-  }
 `;
 
 export const Container2 = styled.div`
-  position: flex;
+  position: relative;
   width: 50%;
   float: right;
   border-color: #ccc;
@@ -53,9 +54,6 @@ export const Container2 = styled.div`
     content: "";
     clear: both;
     display: table;
-  }
-  @media (min-width: 1281px) {
-    width: 35rem;
   }
 `;
 export const P = styled.p`
@@ -97,7 +95,7 @@ export const TimeLeft = styled.span`
 export const Div = styled.div`
   position: fixed;
   width: 60%;
-  margin-top: 50.5rem;
+  margin-top: 52rem;
 `;
 export const Input = styled.input`
   font-size: 1.3rem;

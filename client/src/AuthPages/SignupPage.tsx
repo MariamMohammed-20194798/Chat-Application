@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { RiChatSmile3Fill } from "react-icons/ri";
 
@@ -14,7 +14,9 @@ import {
 } from "./authPagesStyled";
 import instance from "../axios";
 import { useAuthorDataStore } from "../Storage/authorStorage";
+import io from "socket.io-client";
 
+const socket = io("http://localhost:8000");
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -33,8 +35,10 @@ const SignupPage: React.FC = () => {
       });
       if (res.data.status === "success") {
         const user = res.data.data.user;
+        socket.emit("userOnline", user);
+        socket.emit("userSignedUp", user);
         setAuthor(user);
-        nav("/home");
+        nav("/", { replace: true });
       }
     } catch (err: any) {
       if (err.response) {
@@ -86,7 +90,7 @@ const SignupPage: React.FC = () => {
       {errorMsg && <P>{errorMsg}</P>}
       <Btn onClick={joinRoom}>CREATE</Btn>
       <Text>
-        Alreadt Have An Account? <LinkDiv to="/">Signin</LinkDiv>
+        Already Have An Account? <LinkDiv to="/">Signin</LinkDiv>
       </Text>
     </Container>
   );
