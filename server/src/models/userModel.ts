@@ -8,7 +8,6 @@ export interface IUser extends Document {
   photo: string;
   password: string;
   createdAt: Date;
-  messages: Schema.Types.ObjectId[];
   correctPassword: Function;
 }
 
@@ -25,6 +24,8 @@ const userSchema: Schema<IUser> = new mongoose.Schema<IUser>({
   },
   photo: {
     type: String,
+    default:
+      "https://res.cloudinary.com/dwjot1zhy/image/upload/v1698150265/cqwmda1eys6hbf8wlcvo.jpg",
   },
   password: {
     type: String,
@@ -32,12 +33,6 @@ const userSchema: Schema<IUser> = new mongoose.Schema<IUser>({
     minlength: 8,
     require: [true, "Provide a password"],
   },
-  messages: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Message",
-    },
-  ],
   createdAt: {
     type: Date,
     default: Date.now,

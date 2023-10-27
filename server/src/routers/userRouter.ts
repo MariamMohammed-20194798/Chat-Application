@@ -1,16 +1,19 @@
 import express from "express";
-import { signup, login } from "./../controller/authController";
+import { signup, login, protect, logout } from "./../controller/authController";
 import {
   uploadUserPhoto,
-  resizeUserPhoto,
   updateMe,
   getAll,
+  getMe,
 } from "../controller/userController";
 export const router = express.Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
 
-router.get("/getAllUsers", getAll);
+router.get("/getAllUsers", protect, getAll);
+router.get("/getMe", protect, getMe);
 
-router.patch("/:id/updateMe", uploadUserPhoto, resizeUserPhoto, updateMe);
+router.post("/logout", protect, logout);
+
+router.patch("/updateMe", protect, uploadUserPhoto, updateMe);

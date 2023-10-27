@@ -3,11 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
 const express_1 = __importDefault(require("express"));
 const msgController_1 = require("../controller/msgController");
-const router = express_1.default.Router();
-// Define the route to send a message to a friend
-router.post("/:authorId/:friendId/send-message", msgController_1.sendMsgToFriend);
-router.get("/:id", msgController_1.getConvById);
-router.get("/:id/getLastMsg", msgController_1.getMessageById);
-exports.default = router;
+const authController_1 = require("../controller/authController");
+exports.router = express_1.default.Router();
+exports.router.post("/:from/:to/send-message", authController_1.protect, msgController_1.sendMsg);
+/* router.get("/:id", getConvById);
+router.get("/:id/getLastMsg", getMessageById); */

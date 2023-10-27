@@ -7,5 +7,5 @@ const express_1 = __importDefault(require("express"));
 const msgController_1 = require("../controller/msgController");
 const router = express_1.default.Router();
 // Define the route to get a conversation
-router.get("/conversations/:authorId/:friendId", msgController_1.getConversation);
+router.get("/conversations/:authorId/:friendId", msgController_1.getRoom);
 exports.default = router;
