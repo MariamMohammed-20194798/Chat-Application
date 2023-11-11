@@ -1,15 +1,32 @@
 import { create } from "zustand";
+
 interface User {
   _id: string;
   userName: string;
   email: string;
+  photo: string;
 }
+/* interface LastMsgStore {
+  id: any;
+  text: string;
+} */
 
 interface UserState {
-  data: User;
+  data: User | {};
+  lastMessage: any;
+
   setData: (data: User | {}) => void;
+  setLastMessage: (message: any) => void;
 }
+
 export const useDataStore = create<UserState>((set) => ({
-  data: {} as User,
-  setData: (data: User | {}) => set({ data: data as User }),
+  data: {},
+  lastMessage: {},
+
+  setLastMessage: (message: any) => {
+    set({
+      lastMessage: message,
+    });
+  },
+  setData: (data) => set({ data }),
 }));

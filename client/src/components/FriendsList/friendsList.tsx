@@ -30,45 +30,44 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
   const nav = useNavigate();
   const [friends, setFriends] = useState<User[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
+  const [id, setId] = useState("");
+  const [updatePhoto, setUpdatePhoto] = useState("");
+  const newOnlineUser = useAuthorDataStore((state) => state.setOnlineUsers);
+  const update = useAuthorDataStore((state) => state.updatedUsers);
   const setAuthor = useAuthorDataStore((state) => state.setAuthorData);
   const author = useAuthorDataStore((state) => state.authorData);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await instance.get("users/getAllUsers");
-        setFriends(res.data.data);
-      } catch (err) {
-        console.log(err);
-      }
+    const fetchAllUsers = async () => {
+      const res = await instance.get("users/getAllUsers");
+      setFriends(res.data.data);
     };
-    fetchUsers();
-  }, []);
+    fetchAllUsers();
+  }, [update]);
 
   useEffect(() => {
-    socket.on("onlineUsers", (data: User[]) => {
+    socket.on("onlineUsers", (data: any) => {
       setOnlineUsers(data);
+      newOnlineUser(data);
     });
-    socket.on("usersSignedUp", (newUsers: User) => {
-      setFriends((prev) => [...prev, newUsers]);
+    socket.on("usersSignedUp", (newUser) => {
+      console.log(newUser);
+      setFriends((prev) => [...prev, newUser]);
     });
 
-    socket.on("offline", (data: User[]) => {
+    socket.on("offline", (data) => {
       setOnlineUsers(data);
+      newOnlineUser(data);
     });
 
-    socket.emit("userOnline", author);
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+    socket.emit("userOnline", author._id);
+  }, [socket]);
 
   const logOutHandler = async () => {
     try {
       const res = await instance.post("users/logout");
       if (res.data.status === "success") {
-        socket.emit("logout", author);
+        socket.emit("logout", author._id);
         setAuthor({});
         nav("/login", { replace: true });
       }
@@ -77,8 +76,8 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
     }
   };
 
-  const filteredFriends = friends.filter((friend) =>
-    friend.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFriends = friends?.filter((friend) =>
+    friend?.username?.toLowerCase().includes(searchQuery?.toLowerCase())
   );
 
   const moveChatToFront = (friendId: string) => {
@@ -98,21 +97,19 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
     <DivFollow>
       <Container>
         <Ul>
-          {filteredFriends.map((friend) => {
+          {filteredFriends.map((user) => {
             return (
-              <Li key={friend._id}>
+              <Li key={user._id}>
                 <Link
-                  to={`/user/${friend._id}`}
+                  to={`user/${user._id}`}
                   style={{ textDecoration: "none" }}
                 >
                   <FriendItem
-                    _id={friend._id}
-                    name={friend.username}
-                    userImage={friend.photo}
-                    user={friend}
-                    isOnline={onlineUsers.some(
-                      (user) => user._id === friend._id
-                    )}
+                    _id={user._id}
+                    name={user.username}
+                    userImage={user.photo}
+                    user={user}
+                    isOnline={onlineUsers.some((el: any) => user._id === el)}
                     moveChatToFront={moveChatToFront}
                   />
                 </Link>

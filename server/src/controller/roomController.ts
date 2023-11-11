@@ -6,7 +6,7 @@ import { IMessage } from "../models/RoomModel";
 import { CustomRequest } from "./customRequest";
 import Room, { IRoom } from "../models/RoomModel";
 
-export const sendMsg: RequestHandler = catchAsync(async (req, res, next) => {
+/* export const sendMsg: RequestHandler = catchAsync(async (req, res, next) => {
   try {
     const from = req.params.from;
     const to = req.params.to;
@@ -48,9 +48,46 @@ export const sendMsg: RequestHandler = catchAsync(async (req, res, next) => {
   } catch (err) {
     return next(new AppError("Internal server error", 500));
   }
-});
+}); */
 
-export const getRoom: RequestHandler = catchAsync(async (req, res, next) => {
+export const getRoom: RequestHandler = catchAsync(
+  async (req: CustomRequest, res, next) => {
+    let room = await Room.findOne({
+      participants: { $all: [req.user?.id, req.params?.id] },
+    });
+    let statusCode: number = 200;
+
+    if (!room) {
+      room = await Room.create({
+        participants: [req.user?.id, req.params?.id],
+      });
+      statusCode = 201;
+    }
+
+    res.status(statusCode).json({
+      room,
+    });
+  }
+);
+/* export const sendMessage: RequestHandler = catchAsync(
+  async (req: CustomRequest, res, next) => {
+    const { message } = req.body;
+    const roomId = req.params?.id;
+
+    const newMessage: IMessage = {
+      from: req.user?.id,
+      to: req.body.participants[1],
+      text: message,
+      createdAt: new Date(),
+    };
+
+    res.status(200).json({
+      room,
+    });
+  }
+); */
+
+/* export const getRoom: RequestHandler = catchAsync(async (req, res, next) => {
   try {
     const { from, to } = req.params;
 
@@ -68,57 +105,9 @@ export const getRoom: RequestHandler = catchAsync(async (req, res, next) => {
   } catch (err) {
     return next(new AppError("Internal server error", 500));
   }
-});
+}); */
 
-/* export const getAllRooms: RequestHandler = async (req, res, next) => {
-  try {
-    const rooms: IRoom[] = await Room.find();
-    if (!rooms) {
-      return next(new AppError("Rooms not found", 404));
-    }
-    res.status(200).json({
-      status: "success",
-      result: rooms.length,
-      rooms,
-    });
-  } catch (error) {
-    return next(new AppError("Internal server error", 500));
-  }
-}; */
-
-/* export const getAllRooms: RequestHandler = async (req, res, next) => {
-  try {
-    const rooms = await Room.find();
-    if (rooms.length === 0) {
-      return next(new AppError("Rooms not found", 404));
-    }
-
-    const roomsWithLastMessage = await Promise.all(
-      rooms.map(async (room) => {
-        const lastMessage = room.messages[room.messages.length - 1];
-        if (lastMessage) {
-          const populatedMessage = await lastMessage;
-
-          return {
-            ...room.toObject(),
-            lastMessage: populatedMessage,
-          };
-        }
-        return room.toObject();
-      })
-    );
-
-    res.status(200).json({
-      status: "success",
-      result: roomsWithLastMessage.length,
-      rooms: roomsWithLastMessage,
-    });
-  } catch (error) {
-    return next(new AppError("Internal server error", 500));
-  }
-}; */
-
-export const getAllRooms: RequestHandler = catchAsync(
+export const getLastMsg: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
     const rooms = await Room.find().select({
       messages: { $slice: -1 },

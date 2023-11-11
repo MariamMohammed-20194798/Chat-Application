@@ -3,113 +3,105 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllRooms = exports.getRoom = exports.sendMsg = void 0;
+exports.getLastMsg = exports.getRoom = void 0;
 const catchAsync_1 = require("../utils/catchAsync");
-const UserModel_1 = __importDefault(require("../models/UserModel"));
-const appError_1 = require("../utils/appError");
 const RoomModel_1 = __importDefault(require("../models/RoomModel"));
-exports.sendMsg = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    try {
-        const from = req.params.from;
-        const to = req.params.to;
-        const { message } = req.body;
-        const author = await UserModel_1.default.findById(from);
-        const friend = await UserModel_1.default.findById(to);
-        if (!author || !friend)
-            return next(new appError_1.AppError("Author or Friend not found", 404));
-        const newMessage = {
-            from: author._id,
-            to: friend._id,
-            text: message,
-            createdAt: new Date(),
-        };
-        let room = await RoomModel_1.default.findOne({
-            participants: { $all: [from, to] },
-        });
-        if (!room) {
-            room = new RoomModel_1.default({
-                participants: [from, to],
-                messages: [newMessage],
-            });
-        }
-        else {
-            room.messages.push(newMessage);
-        }
-        await room.save();
-        await author.save();
-        await friend.save();
-        return res.status(200).json({
-            message: newMessage,
-        });
+/* export const sendMsg: RequestHandler = catchAsync(async (req, res, next) => {
+  try {
+    const from = req.params.from;
+    const to = req.params.to;
+    const { message } = req.body;
+
+    const author = await User.findById(from);
+    const friend = await User.findById(to);
+
+    if (!author || !friend)
+      return next(new AppError("Author or Friend not found", 404));
+
+    const newMessage: IMessage = {
+      from: author._id,
+      to: friend._id,
+      text: message,
+      createdAt: new Date(),
+    };
+
+    let room = await Room.findOne({
+      participants: { $all: [from, to] },
+    });
+
+    if (!room) {
+      room = new Room({
+        participants: [from, to],
+        messages: [newMessage],
+      });
+    } else {
+      room.messages.push(newMessage);
     }
-    catch (err) {
-        return next(new appError_1.AppError("Internal server error", 500));
-    }
-});
+
+    await room.save();
+    await author.save();
+    await friend.save();
+
+    return res.status(200).json({
+      message: newMessage,
+    });
+  } catch (err) {
+    return next(new AppError("Internal server error", 500));
+  }
+}); */
 exports.getRoom = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    try {
-        const { from, to } = req.params;
-        const room = await RoomModel_1.default.findOne({
-            participants: { $all: [from, to] },
+    var _a, _b, _c, _d;
+    let room = await RoomModel_1.default.findOne({
+        participants: { $all: [(_a = req.user) === null || _a === void 0 ? void 0 : _a.id, (_b = req.params) === null || _b === void 0 ? void 0 : _b.id] },
+    });
+    let statusCode = 200;
+    if (!room) {
+        room = await RoomModel_1.default.create({
+            participants: [(_c = req.user) === null || _c === void 0 ? void 0 : _c.id, (_d = req.params) === null || _d === void 0 ? void 0 : _d.id],
         });
-        if (!room) {
-            return next(new appError_1.AppError("Room not found", 404));
-        }
-        return res.status(200).json({
-            room,
-        });
+        statusCode = 201;
     }
-    catch (err) {
-        return next(new appError_1.AppError("Internal server error", 500));
-    }
+    res.status(statusCode).json({
+        room,
+    });
 });
-/* export const getAllRooms: RequestHandler = async (req, res, next) => {
-  try {
-    const rooms: IRoom[] = await Room.find();
-    if (!rooms) {
-      return next(new AppError("Rooms not found", 404));
-    }
-    res.status(200).json({
-      status: "success",
-      result: rooms.length,
-      rooms,
-    });
-  } catch (error) {
-    return next(new AppError("Internal server error", 500));
-  }
-}; */
-/* export const getAllRooms: RequestHandler = async (req, res, next) => {
-  try {
-    const rooms = await Room.find();
-    if (rooms.length === 0) {
-      return next(new AppError("Rooms not found", 404));
-    }
+/* export const sendMessage: RequestHandler = catchAsync(
+  async (req: CustomRequest, res, next) => {
+    const { message } = req.body;
+    const roomId = req.params?.id;
 
-    const roomsWithLastMessage = await Promise.all(
-      rooms.map(async (room) => {
-        const lastMessage = room.messages[room.messages.length - 1];
-        if (lastMessage) {
-          const populatedMessage = await lastMessage;
-
-          return {
-            ...room.toObject(),
-            lastMessage: populatedMessage,
-          };
-        }
-        return room.toObject();
-      })
-    );
+    const newMessage: IMessage = {
+      from: req.user?.id,
+      to: req.body.participants[1],
+      text: message,
+      createdAt: new Date(),
+    };
 
     res.status(200).json({
-      status: "success",
-      result: roomsWithLastMessage.length,
-      rooms: roomsWithLastMessage,
+      room,
     });
-  } catch (error) {
+  }
+); */
+/* export const getRoom: RequestHandler = catchAsync(async (req, res, next) => {
+  try {
+    const { from, to } = req.params;
+
+    const room = await Room.findOne({
+      participants: { $all: [from, to] },
+    });
+
+    if (!room) {
+      return next(new AppError("Room not found", 404));
+    }
+
+    return res.status(200).json({
+      room,
+    });
+  } catch (err) {
     return next(new AppError("Internal server error", 500));
   }
-}; */
-exports.getAllRooms = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+}); */
+exports.getLastMsg = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     const rooms = await RoomModel_1.default.find().select({
         messages: { $slice: -1 },
         users: 0,

@@ -9,8 +9,6 @@ const roomController_1 = require("../controller/roomController");
 const roomController_2 = require("../controller/roomController");
 const authController_1 = require("../controller/authController");
 exports.router = express_1.default.Router();
-exports.router.post("/:from/:to/send-message", authController_1.protect, roomController_2.sendMsg);
-exports.router.get("/:from/:to", roomController_1.getRoom);
-exports.router.get("/allRooms", authController_1.protect, roomController_2.getAllRooms);
-/* router.get("/:id", getConvById);
-router.get("/:id/getLastMsg", getMessageById); */
+//router.post("/:from/:to/send-message", protect, sendMsg);
+exports.router.get("/getRoom/:id", authController_1.protect, roomController_1.getRoom);
+exports.router.get("/allRooms", authController_1.protect, roomController_2.getLastMsg);

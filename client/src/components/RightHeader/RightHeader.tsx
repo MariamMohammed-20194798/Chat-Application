@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { IoIosSearch } from "react-icons/io";
-import io from "socket.io-client";
 import { FiMoreVertical } from "react-icons/fi";
 import {
   Div,
@@ -10,39 +9,28 @@ import {
   DivIconSearch,
   DivImg,
 } from "./RightHeaderStyled";
-import { useDataStore } from "../../Storage/userStorage";
 
-const socket = io("http://localhost:8000");
+import { useAuthorDataStore } from "../../Storage/authorStorage";
 
-interface User {
-  _id: string;
-  userName: string;
-  name: string;
-  email: string;
+export interface HeaderProps {
+  username: string;
+  photo: string;
+  id: string;
 }
 
-const RightHeader: React.FC = () => {
-  const data = useDataStore((state: any) => state.data);
-  const [onlineUsersArr, setOnlineUsersArr] = useState([]);
+const RightHeader: React.FC<HeaderProps> = ({ username, photo, id }) => {
+  const onlineUsers = useAuthorDataStore((state) => state.onlineUsers);
 
-  useEffect(() => {
-    socket.on("onlineHeader", (onlineUsers) => {
-      setOnlineUsersArr(onlineUsers);
-    });
-  }, [socket]);
+  const status = onlineUsers.has(id);
 
   return (
     <Div>
       <div>
-        <DivImg alt="user" src={data.photo} />
+        <DivImg alt="user" src={photo} />
       </div>
       <div style={{ width: "100%" }}>
-        <P>{data.username}</P>
-        {onlineUsersArr.some((user: User) => user._id === data._id) ? (
-          <P2>Online</P2>
-        ) : (
-          <P2>Offline</P2>
-        )}
+        <P>{username}</P>
+        {status ? <P2>Online</P2> : <P2>Offline</P2>}
       </div>
       <DivIconSearch>
         <IoIosSearch />

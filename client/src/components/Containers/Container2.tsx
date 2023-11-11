@@ -1,7 +1,8 @@
 import React from "react";
 //import whatsAppImg from "./../../imgs/HlpKYq.png";
-import ConversationComponent from "../Chat/chat";
+import Room from "../Chat/chat";
 import { ContainerRight } from "./ContainerStyled";
+import RightHeader from "../RightHeader/RightHeader";
 
 const Container2: React.FC = () => {
   return (
@@ -11,7 +12,7 @@ const Container2: React.FC = () => {
         backgroundSize: "320px",
       }}
     >
-      <ConversationComponent />
+      <Room />
     </ContainerRight>
   );
 };

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import { useAuthorDataStore } from "../../Storage/authorStorage";
 import Modal from "@mui/material/Modal";
-import Edit from "../EditUserDate/Edit";
+import Edit from "../Edit/Edit";
 import {
   Form,
   DivIcon,

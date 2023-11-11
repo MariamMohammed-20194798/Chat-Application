@@ -25,7 +25,7 @@ const FriendItem: React.FC<ChildProps> = ({
 }) => {
   const author = useAuthorDataStore((state) => state.authorData);
   const setFriend = useDataStore((state) => state.setData);
-  const lastMessageStore = useLastMsgStore((state) => state.lastMsg);
+  const lastMessageStore = useAuthorDataStore((state) => state.lastMessage);
   const [lastMsg, setLastMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,7 +50,8 @@ const FriendItem: React.FC<ChildProps> = ({
 
   useEffect(() => {
     if (lastMessageStore.id === _id) {
-      setLastMsg(lastMessageStore.text);
+      console.log(lastMessageStore);
+      setLastMsg(lastMessageStore.newMessage);
       moveChatToFront(_id);
     }
   }, [lastMessageStore]);

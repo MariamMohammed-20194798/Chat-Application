@@ -20,53 +20,90 @@ import {
   DivSpinner,
 } from "./chatStyled";
 import RightHeader from "../RightHeader/RightHeader";
-import { useLastMsgStore } from "../../Storage/lastMsgStore";
 import { useParams } from "react-router-dom";
 
 const socket = io("http://localhost:8000");
 
 interface Message {
-  id: number;
   text: string;
-  to: string;
+  from: string;
   createdAt: string;
+  to: string;
 }
-
-interface Conversation {
-  messages: Message[];
-}
-
-const ConversationComponent: React.FC = () => {
+const Room: React.FC = () => {
   const { receiverId } = useParams();
 
   const authorId = useAuthorDataStore((state: any) => state.authorData);
-  const friendId = useDataStore((state: any) => state.data);
-  const setLastMsg = useLastMsgStore((state: any) => state.setLastMsg);
+  const from = useAuthorDataStore((state: any) => state.authorData._id);
+  const friend = useDataStore((state: any) => state.data);
+  const setLastMessage = useAuthorDataStore(
+    (state: any) => state.setLastMessage
+  );
   const [newMessage, setNewMessage] = useState("");
-  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [roomId, setRoomId] = useState("");
+  const [conversation, setConversation] = useState<Message[]>([]);
   const [isLoading, setLoading] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchConversation();
-  }, [authorId?._id, friendId?._id]);
-
-  const fetchConversation = async () => {
-    try {
+    const roomHandler = async () => {
       setLoading(true);
-      setConversation(null);
-      const response = await instance.get(
-        `/room/${authorId?._id}/${friendId?._id}`
-      );
+      try {
+        const res = await instance.get(`/room/getRoom/${receiverId}`);
+        const room = res.data.room;
 
-      setConversation(response.data.room);
-      const lastMessage =
-        response.data.conversation.messages.slice(-1)[0].message;
-      setLastMsg({ text: lastMessage, id: friendId?._id });
-    } catch (error) {
-      console.error("Error fetching conversation:", error);
-    }
-    setLoading(false);
+        setRoomId(room._id);
+        setConversation(room.messages);
+
+        /*  const [_id] = room.users.filter((el: any) => el._id === receiverId);
+        setReceiverName(_id.username);
+        setReceiverPhoto(_id.photo); */
+
+        socket.emit("join_room", room._id);
+      } catch (error) {
+        console.error("Error retrieving room:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    roomHandler();
+  }, [receiverId]);
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      setLastMessage({ newMessage: data.text, id: data.from });
+      setConversation((prev: any) => [
+        ...prev,
+        { text: data.text, from: data.from, createdAt: data.createdAt },
+      ]);
+    });
+  }, [socket]);
+
+  const sendMessage = () => {
+    if (newMessage === "") return;
+    const createdAt = new Date();
+
+    socket.emit("send_message", {
+      text: newMessage,
+      roomId,
+      from,
+      to: receiverId,
+      createdAt,
+    });
+    console.log(receiverId);
+    setLastMessage({ newMessage, id: receiverId });
+
+    setConversation((prev: any) => [
+      ...prev,
+      { text: newMessage, from, createdAt },
+    ]);
+    setNewMessage("");
+  };
+
+  const convertToTime = (createdAt: string) => {
+    const date = new Date(createdAt);
+    return date.toLocaleTimeString();
   };
 
   useEffect(() => {
@@ -74,50 +111,20 @@ const ConversationComponent: React.FC = () => {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
     }
-  }, [conversation?.messages]);
-
-  const sendMessage = async () => {
-    try {
-      const res = await instance.post(
-        `room/${authorId?._id}/${friendId?._id}/send-message`,
-        { message: newMessage }
-      );
-      socket.emit("send_message", res.data.message);
-      setLastMsg({ text: newMessage, id: receiverId });
-      setNewMessage("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  };
-
-  useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setLastMsg({ text: data.text, id: data.from });
-      setConversation((prevConversation) => {
-        if (prevConversation) {
-          return {
-            ...prevConversation,
-            messages: [...prevConversation.messages, data],
-          };
-        }
-        return null;
-      });
-    });
-  }, [socket]);
-
-  const convertToTime = (createdAt: string) => {
-    const date = new Date(createdAt);
-    return date.toLocaleTimeString();
-  };
+  }, [conversation]);
 
   return (
     <>
-      <RightHeader />
+      <RightHeader
+        username={friend.username}
+        photo={friend.photo}
+        id={receiverId as string}
+      />
       <ConversationContainer ref={chatContainerRef}>
         <div>
-          {conversation?.messages.map((message) => (
-            <React.Fragment key={message.id}>
-              {message.to === friendId?._id ? (
+          {conversation?.map((message: Message) => (
+            <>
+              {message.from === from ? (
                 <Container2>
                   <Img2 src={authorId?.photo} alt="Avatar" />
                   <P>{message.text}</P>
@@ -125,12 +132,12 @@ const ConversationComponent: React.FC = () => {
                 </Container2>
               ) : (
                 <Container>
-                  <Img src={friendId?.photo} alt="Avatar" />
+                  <Img src={friend?.photo} alt="Avatar" />
                   <P>{message.text}</P>
                   <TimeRight>{convertToTime(message.createdAt)}</TimeRight>
                 </Container>
               )}
-            </React.Fragment>
+            </>
           ))}
         </div>
         <Div>
@@ -158,4 +165,4 @@ const ConversationComponent: React.FC = () => {
   );
 };
 
-export default ConversationComponent;
+export default Room;

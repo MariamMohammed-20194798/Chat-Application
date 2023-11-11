@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { FiCamera } from "react-icons/fi";
 import instance from "../../axios";
 import {
@@ -10,7 +10,9 @@ import {
   Button,
   Div,
 } from "./EditStyled";
+import io from "socket.io-client";
 
+const socket = io("http://localhost:8000");
 export interface TypeFieldProps {
   photo: string;
   previewImage: string;
@@ -46,7 +48,10 @@ const Edit: React.FC<TypeFieldProps> = ({
       if (photo) {
         const formData = new FormData();
         formData.append("photo", photo);
-        await instance.patch("users/updateMe", formData);
+        const res = await instance.patch("users/updateMe", formData);
+        const data = res.data.data.user;
+        socket.emit("updatePhoto", data);
+        console.log(res);
       }
       handleClosePhoto();
     } catch (err) {
