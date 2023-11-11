@@ -11,21 +11,14 @@ export const Div = styled.div`
 `;
 
 export const P = styled.p`
-  color: white;
-  font-size: 1.4rem;
-  margin-bottom: -1rem;
+  color: #97a4af;
+  font-size: 1.1rem;
+  margin-top: -1.3rem;
 `;
 
 export const P2 = styled.p`
-  color: #97a4af;
-  font-size: 1.2rem;
-  margin-top: -1rem;
-`;
-
-export const P3 = styled.p`
   color: white;
-  font-size: 1.4rem;
-  margin-top: 1.2rem;
+  font-size: 1.2rem;
 `;
 
 export const Button = styled.button`
@@ -43,8 +36,8 @@ export const Button = styled.button`
 `;
 
 export const DivImg = styled.img`
-  width: 4rem;
-  height: 4rem;
+  width: 3.8rem;
+  height: 3.8rem;
   border-radius: 50%;
   margin-top: 0.9rem;
   margin-right: 1.3rem;

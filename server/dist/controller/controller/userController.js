@@ -26,19 +26,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMe = exports.getAll = exports.updateMe = exports.uploadUserPhoto = void 0;
+exports.getMe = exports.getAll = exports.updateMe = exports.resizeUserPhoto = exports.uploadUserPhoto = void 0;
 const multer_1 = __importDefault(require("multer"));
 const sharp_1 = __importDefault(require("sharp"));
+const path_1 = __importDefault(require("path"));
 const catchAsync_1 = require("../utils/catchAsync");
 const appError_1 = require("../utils/appError");
 const UserModel_1 = __importDefault(require("../models/UserModel"));
 const cloudinary = __importStar(require("cloudinary"));
-const dotenv = __importStar(require("dotenv"));
-dotenv.config({ path: ".env" });
 const cloudinaryV2 = cloudinary.v2;
-console.log("CLOUD_NAME:", process.env.CLOUD_NAME);
-console.log("API_KEY:", process.env.API_KEY);
-console.log("API_SECRET:", process.env.API_SECRET);
 cloudinaryV2.config({
     cloud_name: "dwjot1zhy",
     api_key: "562937548765246",
@@ -50,35 +46,47 @@ const multerFilter = (req, file, cb) => {
         cb(null, true);
     }
     else {
-        cb(new appError_1.AppError("Please upload only images.", 400), false);
+        cb(new appError_1.AppError("Not an image! Please upload only images.", 400), false);
     }
 };
 const upload = (0, multer_1.default)({
     storage: multerStorage,
     fileFilter: multerFilter,
 });
-// Middleware to upload a single photo
 exports.uploadUserPhoto = upload.single("photo");
-// Middleware to update user data
-exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    var _a, _b;
+exports.resizeUserPhoto = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+    var _a;
     if (!req.file)
         return next();
-    req.file.filename = `user-${(_a = req.user) === null || _a === void 0 ? void 0 : _a.id}.jpeg`;
+    req.file.filename = `user-${(_a = req.user) === null || _a === void 0 ? void 0 : _a.id}-${Date.now()}.jpeg`;
+    const filePath = path_1.default.join(__dirname, "imgs", req.file.filename);
+    console.log("File path:", filePath);
     await (0, sharp_1.default)(req.file.buffer)
         .resize(500, 500)
         .toFormat("jpeg")
         .jpeg({ quality: 90 })
-        .toFile(`imgs/${req.file.filename}`);
-    // 1) Filter out unwanted fields that are not allowed to be updated
+        .toFile(filePath);
+    next();
+});
+const filterObj = (obj, ...allowedFields) => {
+    const newObj = {};
+    Object.keys(obj).forEach((el) => {
+        if (allowedFields.includes(el))
+            newObj[el] = obj[el];
+    });
+    return newObj;
+};
+exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+    var _a;
+    // 1) Filtered out unwanted fields names that are not allowed to be updated
     const filteredBody = filterObj(req.body, "username");
-    // 2) If a file is provided, upload it to Cloudinary and update the photo property
     if (req.file) {
-        const result = await cloudinaryV2.uploader.upload(`imgs/${req.file.filename}`);
+        // Upload photo to Cloudinary
+        const result = await cloudinaryV2.uploader.upload(req.file.path);
         filteredBody.photo = result.secure_url;
     }
-    // 3) Update user document
-    const updatedUser = await UserModel_1.default.findByIdAndUpdate((_b = req.user) === null || _b === void 0 ? void 0 : _b.id, filteredBody, {
+    // 2) Update user document
+    const updatedUser = await UserModel_1.default.findByIdAndUpdate((_a = req.user) === null || _a === void 0 ? void 0 : _a.id, filteredBody, {
         new: true,
         runValidators: true,
     });
@@ -89,15 +97,6 @@ exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         },
     });
 });
-// Helper function to filter object properties
-const filterObj = (obj, ...allowedFields) => {
-    const newObj = {};
-    Object.keys(obj).forEach((el) => {
-        if (allowedFields.includes(el))
-            newObj[el] = obj[el];
-    });
-    return newObj;
-};
 exports.getAll = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     var _a;
     const users = await UserModel_1.default.find({ _id: { $ne: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id } }).select("-password -__v");

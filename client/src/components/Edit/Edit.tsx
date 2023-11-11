@@ -10,9 +10,7 @@ import {
   Button,
   Div,
 } from "./EditStyled";
-import io from "socket.io-client";
 
-const socket = io("http://localhost:8000");
 export interface TypeFieldProps {
   photo: string;
   previewImage: string;
@@ -49,8 +47,8 @@ const Edit: React.FC<TypeFieldProps> = ({
         const formData = new FormData();
         formData.append("photo", photo);
         const res = await instance.patch("users/updateMe", formData);
-        const data = res.data.data.user;
-        socket.emit("updatePhoto", data);
+        /* const data = res.data.data.user;
+        socket.emit("updatePhoto", data); */
         console.log(res);
       }
       handleClosePhoto();

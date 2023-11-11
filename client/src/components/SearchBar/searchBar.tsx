@@ -14,6 +14,7 @@ import {
   DivPhoto,
 } from "./searchBarStyled";
 import instance from "../../axios";
+//import { FaEdit } from "react-icons/fa";
 import FriendsList from "../FriendsList/friendsList";
 
 const SearchBar: React.FC = () => {
@@ -56,6 +57,9 @@ const SearchBar: React.FC = () => {
         </Form>
         <DivPhoto>
           <Img src={previewImage} alt="user" onClick={handleOpenPhoto} />
+          {/*  <DivEdit onClick={handleOpenPhoto}>
+            <FaEdit size={35} color="white" />
+          </DivEdit> */}
           <Modal
             open={openPhoto}
             onClose={handleClosePhoto}

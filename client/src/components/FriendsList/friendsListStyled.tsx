@@ -28,20 +28,20 @@ export const Li = styled.li`
 
 export const Ul = styled.ul`
   margin-top: -1rem;
-  margin-right: 0.5rem;
-  margin-left: -2.5rem;
+  margin-right: 1rem;
+  margin-left: -1rem;
 `;
 
 export const LogoutDiv = styled.div`
   display: flex;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   justify-content: center;
   padding-top: 0.5rem;
 `;
 
 export const LogoutBtn = styled.div`
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   text-align: center;
   align-self: center;
   padding: 0.5rem;

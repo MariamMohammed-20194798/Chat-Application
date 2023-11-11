@@ -8,27 +8,34 @@ export const Div2 = styled.div`
   }
 `;
 export const Form = styled.div`
-  margin-left: 0.5rem;
-  margin-top: -2.5rem;
+  margin-left: 1.5rem;
+  margin-top: -2rem;
 `;
 export const DivIcon = styled.div`
   position: relative;
-  top: 3.3rem;
-  left: 1rem;
+  top: 3.5rem;
+  left: 1.4rem;
   color: #fff;
   font-size: 2rem;
 `;
+
+/* export const DivEdit = styled.div`
+  width: 10%;
+  margin-left: 1rem;
+  margin-top: 0.3rem;
+`; */
 
 export const Input = styled.input`
   width: 55%;
   background-color: #192734;
   padding: 1rem;
   border: none;
-  border-radius: 1rem;
+  border-radius: 3rem;
   outline: none;
   color: #fff;
   font-size: 1.3rem;
   padding-left: 4.3rem;
+
   &:focus {
     border: 1px solid rgb(0, 128, 128);
   }
@@ -51,17 +58,17 @@ export const BoxDiv = styled(Box)`
   align-items: center;
 `;
 export const DivPhoto = styled.div`
-  margin-left: 21rem;
+  margin-left: 20rem;
   margin-top: -3.4rem;
 `;
 
 export const Img = styled.img`
-  width: 3rem;
-  height: 3rem;
+  width: 3.3rem;
+  height: 3.3rem;
   border-radius: 50%;
   position: relative;
   outline: none;
-  border: 0.3rem solid rgb(0, 128, 128);
+  border: 0.2rem solid rgb(0, 128, 128);
   @media (min-width: 1281px) {
     width: 3rem;
     height: 3rem;

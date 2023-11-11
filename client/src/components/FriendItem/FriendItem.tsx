@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useDataStore } from "../../Storage/userStorage";
 import { useAuthorDataStore } from "../../Storage/authorStorage";
-import { useLastMsgStore } from "../../Storage/lastMsgStore";
-import { DivImg, Div, OnlineDiv, P2, P3 } from "./FriendItemStyled";
+import { DivImg, Div, OnlineDiv, P, P2 } from "./FriendItemStyled";
 import instance from "../../axios";
 
 type ChildProps = {
@@ -68,8 +66,8 @@ const FriendItem: React.FC<ChildProps> = ({
         </div>
         {isOnline && <OnlineDiv />}
         <div style={{ width: "100%" }}>
-          <P3>{name}</P3>
-          {lastMsg ? <P2>{lastMsg}</P2> : <P3>{lastMsg}</P3>}
+          <P2>{name}</P2>
+          {lastMsg ? <P>{lastMsg}</P> : <P2>{lastMsg}</P2>}
         </div>
       </Div>
     </div>
