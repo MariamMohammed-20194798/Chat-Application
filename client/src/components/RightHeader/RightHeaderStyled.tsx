@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const Div = styled.div`
-  background-color: #15202b;
+  background-color: #192734;
   margin-top: -1.4rem;
   margin-left: -1.4rem;
   margin-right: -1.5rem;

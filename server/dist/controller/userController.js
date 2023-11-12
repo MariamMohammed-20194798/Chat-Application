@@ -59,23 +59,35 @@ const upload = (0, multer_1.default)({
 });
 // Middleware to upload a single photo
 exports.uploadUserPhoto = upload.single("photo");
+// Helper function to filter object properties
+const filterObj = (obj, ...allowedFields) => {
+    const newObj = {};
+    Object.keys(obj).forEach((el) => {
+        if (allowedFields.includes(el))
+            newObj[el] = obj[el];
+    });
+    return newObj;
+};
 // Middleware to update user data
 exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     var _a, _b;
-    if (!req.file)
-        return next();
-    req.file.filename = `user-${(_a = req.user) === null || _a === void 0 ? void 0 : _a.id}.jpeg`;
-    await (0, sharp_1.default)(req.file.buffer)
-        .resize(500, 500)
-        .toFormat("jpeg")
-        .jpeg({ quality: 90 })
-        .toFile(`imgs/${req.file.filename}`);
     // 1) Filter out unwanted fields that are not allowed to be updated
-    const filteredBody = filterObj(req.body, "username");
-    // 2) If a file is provided, upload it to Cloudinary and update the photo property
-    if (req.file) {
-        const result = await cloudinaryV2.uploader.upload(`imgs/${req.file.filename}`);
-        filteredBody.photo = result.secure_url;
+    let filteredBody = filterObj(req.body, "username", "photo");
+    if (!req.file) {
+        filteredBody = filterObj(req.body, "username");
+    }
+    else if (req.file) {
+        req.file.filename = `user-${(_a = req.user) === null || _a === void 0 ? void 0 : _a.id}.jpeg`;
+        await (0, sharp_1.default)(req.file.buffer)
+            .resize(500, 500)
+            .toFormat("jpeg")
+            .jpeg({ quality: 90 })
+            .toFile(`imgs/${req.file.filename}`);
+        // 2) If a file is provided, upload it to Cloudinary and update the photo property
+        if (req.file) {
+            const result = await cloudinaryV2.uploader.upload(`imgs/${req.file.filename}`);
+            filteredBody.photo = result.secure_url;
+        }
     }
     // 3) Update user document
     const updatedUser = await UserModel_1.default.findByIdAndUpdate((_b = req.user) === null || _b === void 0 ? void 0 : _b.id, filteredBody, {
@@ -89,15 +101,6 @@ exports.updateMe = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         },
     });
 });
-// Helper function to filter object properties
-const filterObj = (obj, ...allowedFields) => {
-    const newObj = {};
-    Object.keys(obj).forEach((el) => {
-        if (allowedFields.includes(el))
-            newObj[el] = obj[el];
-    });
-    return newObj;
-};
 exports.getAll = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     var _a;
     const users = await UserModel_1.default.find({ _id: { $ne: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id } }).select("-password -__v");

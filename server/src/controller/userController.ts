@@ -39,27 +39,39 @@ const upload = multer({
 // Middleware to upload a single photo
 export const uploadUserPhoto: RequestHandler = upload.single("photo");
 
+// Helper function to filter object properties
+const filterObj = (obj: any, ...allowedFields: string[]) => {
+  const newObj: any = {};
+  Object.keys(obj).forEach((el: string) => {
+    if (allowedFields.includes(el)) newObj[el] = obj[el];
+  });
+  return newObj;
+};
+
 // Middleware to update user data
 export const updateMe: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
-    if (!req.file) return next();
-
-    req.file.filename = `user-${req.user?.id}.jpeg`;
-
-    await sharp(req.file.buffer)
-      .resize(500, 500)
-      .toFormat("jpeg")
-      .jpeg({ quality: 90 })
-      .toFile(`imgs/${req.file.filename}`);
     // 1) Filter out unwanted fields that are not allowed to be updated
-    const filteredBody = filterObj(req.body, "username");
+    let filteredBody = filterObj(req.body, "username", "photo");
 
-    // 2) If a file is provided, upload it to Cloudinary and update the photo property
-    if (req.file) {
-      const result = await cloudinaryV2.uploader.upload(
-        `imgs/${req.file.filename}`
-      );
-      filteredBody.photo = result.secure_url;
+    if (!req.file) {
+      filteredBody = filterObj(req.body, "username");
+    } else if (req.file) {
+      req.file.filename = `user-${req.user?.id}.jpeg`;
+
+      await sharp(req.file.buffer)
+        .resize(500, 500)
+        .toFormat("jpeg")
+        .jpeg({ quality: 90 })
+        .toFile(`imgs/${req.file.filename}`);
+
+      // 2) If a file is provided, upload it to Cloudinary and update the photo property
+      if (req.file) {
+        const result = await cloudinaryV2.uploader.upload(
+          `imgs/${req.file.filename}`
+        );
+        filteredBody.photo = result.secure_url;
+      }
     }
 
     // 3) Update user document
@@ -80,15 +92,6 @@ export const updateMe: RequestHandler = catchAsync(
     });
   }
 );
-
-// Helper function to filter object properties
-const filterObj = (obj: any, ...allowedFields: string[]) => {
-  const newObj: any = {};
-  Object.keys(obj).forEach((el: string) => {
-    if (allowedFields.includes(el)) newObj[el] = obj[el];
-  });
-  return newObj;
-};
 
 export const getAll: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
