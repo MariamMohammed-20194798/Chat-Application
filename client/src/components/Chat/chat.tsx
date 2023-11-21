@@ -5,19 +5,21 @@ import { Spinner } from "../Spinner/spinner";
 import instance from "../../axios";
 import io from "socket.io-client";
 import {
-  Container,
-  Container2,
   P,
   Img,
   Img2,
   TimeRight,
   TimeLeft,
-  Div,
-  Input,
   Btn,
   AiOutlineSendIcon,
+  TypeArea,
+  Container,
   ConversationContainer,
   DivSpinner,
+  ContainerSender,
+  ContainerReceiver,
+  MessageReceiver,
+  MessageSender,
 } from "./chatStyled";
 import RightHeader from "../RightHeader/RightHeader";
 import { useParams } from "react-router-dom";
@@ -54,11 +56,6 @@ const Room: React.FC = () => {
 
         setRoomId(room._id);
         setConversation(room.messages);
-
-        /*  const [_id] = room.users.filter((el: any) => el._id === receiverId);
-        setReceiverName(_id.username);
-        setReceiverPhoto(_id.photo); */
-
         socket.emit("join_room", room._id);
       } catch (error) {
         console.error("Error retrieving room:", error);
@@ -103,7 +100,10 @@ const Room: React.FC = () => {
 
   const convertToTime = (createdAt: string) => {
     const date = new Date(createdAt);
-    return date.toLocaleTimeString();
+    const group1 = date.toLocaleTimeString().slice(0, 4);
+    const group2 = date.toLocaleTimeString().slice(7, 11);
+    const time = group1 + group2;
+    return time;
   };
 
   useEffect(() => {
@@ -119,48 +119,53 @@ const Room: React.FC = () => {
         username={friend.username}
         photo={friend.photo}
         id={receiverId as string}
-      />
+      />{" "}
       <ConversationContainer ref={chatContainerRef}>
-        <div>
-          {conversation?.map((message: Message) => (
-            <>
-              {message.from === from ? (
-                <Container2>
-                  <Img2 src={authorId?.photo} alt="Avatar" />
-                  <P>{message.text}</P>
-                  <TimeLeft>{convertToTime(message.createdAt)}</TimeLeft>
-                </Container2>
-              ) : (
-                <Container>
-                  <Img src={friend?.photo} alt="Avatar" />
-                  <P>{message.text}</P>
-                  <TimeRight>{convertToTime(message.createdAt)}</TimeRight>
-                </Container>
-              )}
-            </>
-          ))}
-        </div>
-        <Div>
-          <Input
-            type="text"
-            id="msg"
-            value={newMessage}
-            placeholder="Message"
-            onChange={(e) => {
-              e.preventDefault();
-              setNewMessage(e.target.value);
-            }}
-          />
-          <Btn onClick={sendMessage}>
-            <AiOutlineSendIcon />
-          </Btn>
-        </Div>
         {isLoading ? (
           <DivSpinner>
             <Spinner />
           </DivSpinner>
-        ) : null}
+        ) : (
+          <div>
+            {conversation?.map((message: Message) => (
+              <>
+                {message.from === from ? (
+                  <ContainerSender>
+                    <MessageSender>
+                      <Img2 src={authorId?.photo} alt="Avatar" />
+                      <P>{message.text}</P>
+                      <TimeLeft>{convertToTime(message.createdAt)}</TimeLeft>
+                    </MessageSender>
+                  </ContainerSender>
+                ) : (
+                  <ContainerReceiver>
+                    <MessageReceiver>
+                      <Img src={friend?.photo} alt="Avatar" />
+                      <P>{message.text}</P>
+                      <TimeRight>{convertToTime(message.createdAt)}</TimeRight>
+                    </MessageReceiver>
+                  </ContainerReceiver>
+                )}
+              </>
+            ))}
+          </div>
+        )}
       </ConversationContainer>
+      <Container>
+        <TypeArea
+          placeholder="Message"
+          maxRows={3}
+          value={newMessage}
+          onChange={(e) => {
+            e.preventDefault();
+            setNewMessage(e.target.value);
+          }}
+        />
+
+        <Btn onClick={sendMessage}>
+          <AiOutlineSendIcon />
+        </Btn>
+      </Container>
     </>
   );
 };

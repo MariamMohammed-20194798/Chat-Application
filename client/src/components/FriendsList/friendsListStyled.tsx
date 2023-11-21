@@ -5,7 +5,8 @@ export const DivFollow = styled.div`
 `;
 
 export const Container = styled.div`
-  height: 50rem;
+  height: 63rem;
+  margin-top: -10rem;
   overflow-y: scroll;
 
   /* Scrollbar styles */
@@ -27,9 +28,8 @@ export const Li = styled.li`
 `;
 
 export const Ul = styled.ul`
-  margin-top: -1rem;
-  margin-right: 1rem;
-  margin-left: -1rem;
+  margin-right: 2.5rem;
+  flex-grow: 1;
 `;
 
 export const LogoutDiv = styled.div`
