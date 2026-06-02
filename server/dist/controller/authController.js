@@ -12,11 +12,14 @@ const cookieOptions = (req) => ({
     sameSite: "lax",
 });
 const createSendToken = async (accessToken, refreshToken, userId, statusCode, req, res) => {
+    console.log("createSendToken called for user:", userId);
     const profile = await (0, userService_1.getProfileById)(userId);
     if (!profile) {
-        res.status(500).json({ status: "error", message: "User profile not found" });
+        console.error("Profile not found for user:", userId);
+        res.status(500).json({ status: "error", message: "User profile not found. Please try signing up again." });
         return;
     }
+    console.log("Profile found:", profile);
     const expiresDays = Number(process.env.JWT_COOKIE_EXPIRES_IN) || 90;
     res.cookie("jwt", accessToken, {
         ...cookieOptions(req),
@@ -36,13 +39,17 @@ const createSendToken = async (accessToken, refreshToken, userId, statusCode, re
     });
 };
 exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+    var _a;
     const { email, username, password } = req.body;
+    console.log("Signup request body:", { email, username, passwordLength: password === null || password === void 0 ? void 0 : password.length });
     if (!email || !username || !password) {
+        console.log("Missing fields:", { email: !email, username: !username, password: !password });
         return next(new appError_1.AppError("Username, email and password are required", 400));
     }
     if (password.length < 8) {
         return next(new appError_1.AppError("Password must be at least 8 characters", 400));
     }
+    console.log("Attempting Supabase signup for:", email);
     const { data, error } = await supabase_1.supabaseAuth.auth.signUp({
         email,
         password,
@@ -51,11 +58,19 @@ exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         },
     });
     if (error) {
+        console.error("Supabase signup error:", error);
+        if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+            return next(new appError_1.AppError("Too many signup attempts. Please wait a few minutes and try again.", 429));
+        }
+        if (error.status === 0 || error.name === "AuthRetryableFetchError") {
+            return next(new appError_1.AppError("Unable to connect to Supabase. Please check your network or try again later.", 503));
+        }
         if (error.message.includes("already registered")) {
             return next(new appError_1.AppError("Duplicate email. Please use another value!", 500));
         }
         return next(new appError_1.AppError(error.message, 400));
     }
+    console.log("Supabase signup successful, user ID:", (_a = data.user) === null || _a === void 0 ? void 0 : _a.id);
     if (!data.session || !data.user) {
         return next(new appError_1.AppError("Signup successful. Please confirm your email if required by your Supabase project settings.", 201));
     }

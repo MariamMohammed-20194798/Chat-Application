@@ -2,14 +2,31 @@ import { supabaseAdmin } from "../lib/supabase";
 import { IProfile } from "../types/database";
 
 export const getProfileById = async (id: string): Promise<IProfile | null> => {
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("*")
-    .eq("id", id)
-    .single();
+  // Retry mechanism to handle trigger timing
+  let retries = 0;
+  const maxRetries = 3;
+  const delayMs = 500;
 
-  if (error || !data) return null;
-  return data as IProfile;
+  while (retries < maxRetries) {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (!error && data) {
+      return data as IProfile;
+    }
+
+    retries++;
+    if (retries < maxRetries) {
+      console.log(`Profile not found, retry ${retries}/${maxRetries} after ${delayMs}ms`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  console.error(`Profile lookup failed for user ${id} after ${maxRetries} retries`);
+  return null;
 };
 
 export const getAllProfilesExcept = async (

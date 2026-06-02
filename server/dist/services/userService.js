@@ -3,14 +3,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.upsertPresence = exports.updateProfile = exports.getAllProfilesExcept = exports.getProfileById = void 0;
 const supabase_1 = require("../lib/supabase");
 const getProfileById = async (id) => {
-    const { data, error } = await supabase_1.supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("id", id)
-        .single();
-    if (error || !data)
-        return null;
-    return data;
+    // Retry mechanism to handle trigger timing
+    let retries = 0;
+    const maxRetries = 3;
+    const delayMs = 500;
+    while (retries < maxRetries) {
+        const { data, error } = await supabase_1.supabaseAdmin
+            .from("profiles")
+            .select("*")
+            .eq("id", id)
+            .single();
+        if (!error && data) {
+            return data;
+        }
+        retries++;
+        if (retries < maxRetries) {
+            console.log(`Profile not found, retry ${retries}/${maxRetries} after ${delayMs}ms`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+    }
+    console.error(`Profile lookup failed for user ${id} after ${maxRetries} retries`);
+    return null;
 };
 exports.getProfileById = getProfileById;
 const getAllProfilesExcept = async (excludeId) => {

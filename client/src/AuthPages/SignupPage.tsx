@@ -27,7 +27,10 @@ const SignupPage: React.FC = () => {
 
   const joinRoom = async (event: any) => {
     try {
-      if (!email || !password) console.log("Email and Password Are Required.");
+      if (!username || !email || !password) {
+        setErrorMsg("Username, Email and Password Are Required.");
+        return;
+      }
       const res = await instance.post("users/signup", {
         username,
         email,
@@ -44,8 +47,14 @@ const SignupPage: React.FC = () => {
       if (err.response) {
         if (err.response.status === 400) {
           setErrorMsg("Username, Email and Password Are Required.");
+        } else if (err.response.status === 429) {
+          setErrorMsg("Too many signup attempts. Please wait a few minutes and try again.");
+        } else if (err.response.status === 503) {
+          setErrorMsg("Cannot reach Supabase right now. Please try again later.");
         } else if (err.response.status === 500) {
           setErrorMsg("Duplicate Email. Please use another value!");
+        } else {
+          setErrorMsg(err.response.data?.message || "An error occurred. Please try again later.");
         }
       } else {
         setErrorMsg("An error occurred. Please try again later.");
