@@ -44,7 +44,8 @@ const FriendItem: React.FC<ChildProps> = ({
       }
     };
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_id, author._id]);
 
   useEffect(() => {
     if (lastMessageStore.id === _id) {
@@ -52,7 +53,8 @@ const FriendItem: React.FC<ChildProps> = ({
       setLastMsg(lastMessageStore.newMessage);
       moveChatToFront(_id);
     }
-  }, [lastMessageStore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_id, moveChatToFront, lastMessageStore]);
 
   const handleClick = () => {
     setFriend(user);

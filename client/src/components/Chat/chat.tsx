@@ -75,7 +75,8 @@ const Room: React.FC = () => {
         { text: data.text, from: data.from, createdAt: data.createdAt },
       ]);
     });
-  }, [socket]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, setLastMessage]);
 
   const sendMessage = () => {
     if (newMessage === "") return;

@@ -30,8 +30,6 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
   const nav = useNavigate();
   const [friends, setFriends] = useState<User[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
-  const [id, setId] = useState("");
-  const [updatePhoto, setUpdatePhoto] = useState("");
   const newOnlineUser = useAuthorDataStore((state) => state.setOnlineUsers);
   const update = useAuthorDataStore((state) => state.updatedUsers);
   const setAuthor = useAuthorDataStore((state) => state.setAuthorData);
@@ -61,7 +59,8 @@ const FriendsList: React.FC<FriendsListProps> = ({ searchQuery }) => {
     });
 
     socket.emit("userOnline", author._id);
-  }, [socket]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [author._id, newOnlineUser, socket]);
 
   const logOutHandler = async () => {
     try {

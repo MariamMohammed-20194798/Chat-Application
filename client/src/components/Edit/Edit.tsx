@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { FiCamera } from "react-icons/fi";
 import instance from "../../axios";
 import {

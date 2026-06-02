@@ -7,6 +7,7 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.16",
     "@mui/material": "^5.14.14",
+    "@supabase/supabase-js": "^2.45.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -14,7 +15,6 @@
     "@types/node": "^16.18.57",
     "@types/react": "^18.2.24",
     "@types/react-dom": "^18.2.8",
-    "@supabase/supabase-js": "^2.45.0",
     "axios": "^1.5.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -55,6 +55,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/axios": "^0.14.0",
     "@types/react-router-dom": "^5.3.3",
     "@types/socket.io-client": "^3.0.0"

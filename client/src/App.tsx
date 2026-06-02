@@ -32,7 +32,7 @@ const App: React.FC = () => {
       }
     };
     fetchUserHandler();
-  }, []);
+  }, [setAuthor]);
 
   return (
     <>
