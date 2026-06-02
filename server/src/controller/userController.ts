@@ -4,21 +4,23 @@ import { RequestHandler } from "express";
 import { CustomRequest } from "./customRequest";
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/appError";
-import User from "../models/UserModel";
+import {
+  getAllProfilesExcept,
+  getProfileById,
+  updateProfile,
+} from "../services/userService";
+import { profileToApiUser, profileToApiUsers } from "../utils/mongoCompat";
 import * as cloudinary from "cloudinary";
 import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env" });
 
 const cloudinaryV2 = cloudinary.v2;
-console.log("CLOUD_NAME:", process.env.CLOUD_NAME);
-console.log("API_KEY:", process.env.API_KEY);
-console.log("API_SECRET:", process.env.API_SECRET);
 
 cloudinaryV2.config({
-  cloud_name: "dwjot1zhy",
-  api_key: "562937548765246",
-  api_secret: "XlZxwlVoZndfWq3OUNP58rpHXZM",
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 const multerStorage = multer.memoryStorage();
@@ -36,10 +38,8 @@ const upload = multer({
   fileFilter: multerFilter,
 });
 
-// Middleware to upload a single photo
 export const uploadUserPhoto: RequestHandler = upload.single("photo");
 
-// Helper function to filter object properties
 const filterObj = (obj: any, ...allowedFields: string[]) => {
   const newObj: any = {};
   Object.keys(obj).forEach((el: string) => {
@@ -48,16 +48,14 @@ const filterObj = (obj: any, ...allowedFields: string[]) => {
   return newObj;
 };
 
-// Middleware to update user data
 export const updateMe: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
-    // 1) Filter out unwanted fields that are not allowed to be updated
     let filteredBody = filterObj(req.body, "username", "photo");
 
     if (!req.file) {
       filteredBody = filterObj(req.body, "username");
     } else if (req.file) {
-      req.file.filename = `user-${req.user?.id}.jpeg`;
+      req.file.filename = `user-${req.user?._id}.jpeg`;
 
       await sharp(req.file.buffer)
         .resize(500, 500)
@@ -65,29 +63,18 @@ export const updateMe: RequestHandler = catchAsync(
         .jpeg({ quality: 90 })
         .toFile(`imgs/${req.file.filename}`);
 
-      // 2) If a file is provided, upload it to Cloudinary and update the photo property
-      if (req.file) {
-        const result = await cloudinaryV2.uploader.upload(
-          `imgs/${req.file.filename}`
-        );
-        filteredBody.photo = result.secure_url;
-      }
+      const result = await cloudinaryV2.uploader.upload(
+        `imgs/${req.file.filename}`
+      );
+      filteredBody.photo = result.secure_url;
     }
 
-    // 3) Update user document
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user?.id,
-      filteredBody,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const updated = await updateProfile(req.user!._id, filteredBody);
 
     res.status(200).json({
       status: "success",
       data: {
-        user: updatedUser,
+        user: updated ? profileToApiUser(updated) : req.user,
       },
     });
   }
@@ -95,9 +82,9 @@ export const updateMe: RequestHandler = catchAsync(
 
 export const getAll: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
-    const users = await User.find({ _id: { $ne: req.user?.id } }).select(
-      "-password -__v"
-    );
+    const profiles = await getAllProfilesExcept(req.user!._id);
+    const users = profileToApiUsers(profiles);
+
     res.status(200).json({
       status: "success",
       results: users.length,
@@ -108,14 +95,12 @@ export const getAll: RequestHandler = catchAsync(
 
 export const getMe: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
-    console.log(req.user);
-
-    const user = await User.findById(req.user?.id);
+    const profile = await getProfileById(req.user!._id);
 
     res.status(200).json({
       status: "success",
       data: {
-        data: user,
+        data: profile ? profileToApiUser(profile) : req.user,
       },
     });
   }

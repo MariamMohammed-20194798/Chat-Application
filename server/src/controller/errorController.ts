@@ -1,28 +1,19 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/appError";
 
-const handleCastErrorDB = (err: any): AppError => {
-  const message = `Invalid ${err.path}: ${err.value}.`;
+const handleInvalidUUID = (): AppError =>
+  new AppError("Invalid ID format.", 400);
+
+const handleDuplicateFieldsDB = (err: { message?: string }): AppError => {
+  const message =
+    err.message?.includes("duplicate") || err.message?.includes("unique")
+      ? `Duplicate field value. Please use another value!`
+      : "Duplicate field value. Please use another value!";
   return new AppError(message, 400);
 };
 
-const handleDuplicateFieldsDB = (err: any): AppError => {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-  const message = `Duplicate field value: ${value}. Please use another value!`;
-  return new AppError(message, 400);
-};
-
-const handleValidationErrorDB = (err: any): AppError => {
-  const errors = Object.values(err.errors).map((el: any) => el.message);
-  const message = `Invalid input data. ${errors.join(". ")}`;
-  return new AppError(message, 400);
-};
-
-const handleJWTError = (): AppError =>
-  new AppError("Invalid token. Please log in again!", 401);
-
-const handleJWTExpiredError = (): AppError =>
-  new AppError("Your token has expired! Please log in again.", 401);
+const handleAuthError = (message: string): AppError =>
+  new AppError(message, 401);
 
 const sendErrorDev = (err: AppError, req: Request, res: Response): void => {
   if (req.originalUrl.startsWith("/api")) {
@@ -33,10 +24,10 @@ const sendErrorDev = (err: AppError, req: Request, res: Response): void => {
       stack: err.stack,
     });
   } else {
-    console.error("ERROR 💥", err);
-    res.status(err.statusCode).render("error", {
-      title: "Something went wrong!",
-      msg: err.message,
+    console.error("ERROR", err);
+    res.status(err.statusCode).json({
+      status: err.status,
+      message: err.message,
     });
   }
 };
@@ -49,25 +40,17 @@ const sendErrorProd = (err: AppError, req: Request, res: Response): void => {
         message: err.message,
       });
     } else {
-      console.error("ERROR 💥", err);
+      console.error("ERROR", err);
       res.status(500).json({
         status: "error",
         message: "Something went very wrong!",
       });
     }
   } else {
-    if (err.isOperational) {
-      res.status(err.statusCode).render("error", {
-        title: "Something went wrong!",
-        msg: err.message,
-      });
-    } else {
-      console.error("ERROR 💥", err);
-      res.status(err.statusCode).render("error", {
-        title: "Something went wrong!",
-        msg: "Please try again later.",
-      });
-    }
+    res.status(err.statusCode || 500).json({
+      status: "error",
+      message: err.isOperational ? err.message : "Something went wrong!",
+    });
   }
 };
 
@@ -75,28 +58,28 @@ const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
-  const error = err as AppError;
+  const error = err as AppError & { code?: string };
   error.statusCode = error.statusCode || 500;
   error.status = error.status || "error";
 
   if (process.env.NODE_ENV === "development") {
     sendErrorDev(error, req, res);
-  } else if (process.env.NODE_ENV === "production") {
+  } else {
     let handledError = { ...error };
     handledError.message = error.message;
 
-    if (handledError.name === "CastError")
-      handledError = handleCastErrorDB(handledError);
-    if (handledError.statusCode === 11000)
+    if (error.code === "22P02" || error.message?.includes("invalid input syntax"))
+      handledError = handleInvalidUUID();
+    if (error.code === "23505")
       handledError = handleDuplicateFieldsDB(handledError);
-    if (handledError.name === "ValidationError")
-      handledError = handleValidationErrorDB(handledError);
-    if (handledError.name === "JsonWebTokenError")
-      handledError = handleJWTError();
-    if (handledError.name === "TokenExpiredError")
-      handledError = handleJWTExpiredError();
+    if (
+      error.name === "AuthApiError" ||
+      error.message?.includes("JWT") ||
+      error.message?.includes("token")
+    )
+      handledError = handleAuthError("Invalid or expired token. Please log in again.");
 
     sendErrorProd(handledError, req, res);
   }

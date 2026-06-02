@@ -1,96 +1,113 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logout = exports.protect = exports.login = exports.signup = void 0;
-const UserModel_1 = __importDefault(require("../models/UserModel"));
 const catchAsync_1 = require("../utils/catchAsync");
 const appError_1 = require("../utils/appError");
-const jsonwebtoken_1 = require("jsonwebtoken");
-const jsonwebtoken_2 = __importDefault(require("jsonwebtoken"));
-const signToken = (id) => {
-    return jsonwebtoken_2.default.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: "90d",
+const supabase_1 = require("../lib/supabase");
+const userService_1 = require("../services/userService");
+const mongoCompat_1 = require("../utils/mongoCompat");
+const cookieOptions = (req) => ({
+    httpOnly: true,
+    secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+    sameSite: "lax",
+});
+const createSendToken = async (accessToken, refreshToken, userId, statusCode, req, res) => {
+    const profile = await (0, userService_1.getProfileById)(userId);
+    if (!profile) {
+        res.status(500).json({ status: "error", message: "User profile not found" });
+        return;
+    }
+    const expiresDays = Number(process.env.JWT_COOKIE_EXPIRES_IN) || 90;
+    res.cookie("jwt", accessToken, {
+        ...cookieOptions(req),
+        expires: new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000),
     });
-};
-const createSendToken = (user, statusCode, req, res) => {
-    const token = signToken(user._id);
-    res.cookie("jwt", token, {
-        expires: new Date(Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        secure: req.secure || req.headers["x-forwarded-proto"] === "https",
-    });
-    user.password = undefined;
+    if (refreshToken) {
+        res.cookie("refresh_token", refreshToken, {
+            ...cookieOptions(req),
+            expires: new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000),
+        });
+    }
+    const user = (0, mongoCompat_1.profileToApiUser)(profile);
     res.status(statusCode).json({
         status: "success",
-        token,
-        data: {
-            user,
-        },
+        token: accessToken,
+        data: { user },
     });
 };
-// SIGNUP FUNCTION
 exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    const newUser = await UserModel_1.default.create({
-        email: req.body.email,
-        password: req.body.password,
-        username: req.body.username,
+    const { email, username, password } = req.body;
+    if (!email || !username || !password) {
+        return next(new appError_1.AppError("Username, email and password are required", 400));
+    }
+    if (password.length < 8) {
+        return next(new appError_1.AppError("Password must be at least 8 characters", 400));
+    }
+    const { data, error } = await supabase_1.supabaseAuth.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { username },
+        },
     });
-    createSendToken(newUser, 201, req, res);
+    if (error) {
+        if (error.message.includes("already registered")) {
+            return next(new appError_1.AppError("Duplicate email. Please use another value!", 500));
+        }
+        return next(new appError_1.AppError(error.message, 400));
+    }
+    if (!data.session || !data.user) {
+        return next(new appError_1.AppError("Signup successful. Please confirm your email if required by your Supabase project settings.", 201));
+    }
+    await createSendToken(data.session.access_token, data.session.refresh_token, data.user.id, 201, req, res);
 });
-// LOGIN FUNCTION
 exports.login = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     const { email, password } = req.body;
-    // 1. Check If email Or Pass is exist
     if (!email || !password) {
         return next(new appError_1.AppError("Please provide email and password!", 400));
     }
-    // 2. Check If User Exist & password is correct
-    const user = await UserModel_1.default.findOne({ email }).select("+password");
-    if (!user || !(await user.correctPassword(password, user.password))) {
+    const { data, error } = await supabase_1.supabaseAuth.auth.signInWithPassword({
+        email,
+        password,
+    });
+    if (error || !data.session || !data.user) {
         return next(new appError_1.AppError("Incorrect email or password", 401));
     }
-    // 3. Send Token if every thing is okay
-    createSendToken(user, 200, req, res);
+    await createSendToken(data.session.access_token, data.session.refresh_token, data.user.id, 200, req, res);
 });
-const jwtVerifyPromisified = (token, secret) => {
-    return new Promise((resolve, reject) => {
-        (0, jsonwebtoken_1.verify)(token, secret, {}, (err, payload) => {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve(payload);
-            }
-        });
-    });
-};
 exports.protect = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    // 1) check if token is there and if it exists
-    let token = req.cookies.jwt;
+    const token = req.cookies.jwt;
     if (!token) {
         return next(new appError_1.AppError("please login to access this route", 401));
     }
-    // 2) Verify Token
-    const decoded = (await jwtVerifyPromisified(token, process.env.JWT_SECRET));
-    // 3) check if user exist
-    const currentUser = (await UserModel_1.default.findById(decoded.id));
-    if (!currentUser) {
+    const { data, error } = await supabase_1.supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) {
+        return next(new appError_1.AppError("please login to access this route", 401));
+    }
+    const profile = await (0, userService_1.getProfileById)(data.user.id);
+    if (!profile) {
         return next(new appError_1.AppError("please login to access this route", 404));
     }
-    req.user = currentUser;
+    req.user = (0, mongoCompat_1.profileToApiUser)(profile);
+    req.accessToken = token;
     next();
 });
 exports.logout = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    const user = req.user;
+    const token = req.cookies.jwt;
+    if (token) {
+        await supabase_1.supabaseAuth.auth.signOut();
+    }
     res.cookie("jwt", "", {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true,
+    });
+    res.cookie("refresh_token", "", {
         expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true,
     });
     res.status(200).json({
         status: "success",
         message: "logged out successfully",
-        user,
+        user: req.user,
     });
 });

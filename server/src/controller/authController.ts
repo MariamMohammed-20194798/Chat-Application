@@ -1,43 +1,50 @@
-import User from "../models/UserModel";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/appError";
 import { CustomRequest } from "./customRequest";
-import { IUser } from "../models/UserModel";
-import { JwtPayload } from "jsonwebtoken";
-import { verify as verifyJWT } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
+import { supabaseAuth, supabaseAdmin } from "../lib/supabase";
+import { getProfileById } from "../services/userService";
+import { profileToApiUser } from "../utils/mongoCompat";
 
-const signToken = (id: string): string => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "90d",
-  });
-};
+const cookieOptions = (req: Request) => ({
+  httpOnly: true,
+  secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+  sameSite: "lax" as const,
+});
 
-const createSendToken = (
-  user: any,
+const createSendToken = async (
+  accessToken: string,
+  refreshToken: string | undefined,
+  userId: string,
   statusCode: number,
   req: Request,
   res: Response
-): void => {
-  const token = signToken(user._id);
+): Promise<void> => {
+  const profile = await getProfileById(userId);
+  if (!profile) {
+    res.status(500).json({ status: "error", message: "User profile not found" });
+    return;
+  }
 
-  res.cookie("jwt", token, {
-    expires: new Date(
-      Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-    secure: req.secure || req.headers["x-forwarded-proto"] === "https",
+  const expiresDays = Number(process.env.JWT_COOKIE_EXPIRES_IN) || 90;
+  res.cookie("jwt", accessToken, {
+    ...cookieOptions(req),
+    expires: new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000),
   });
 
-  user.password = undefined;
+  if (refreshToken) {
+    res.cookie("refresh_token", refreshToken, {
+      ...cookieOptions(req),
+      expires: new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  const user = profileToApiUser(profile);
 
   res.status(statusCode).json({
     status: "success",
-    token,
-    data: {
-      user,
-    },
+    token: accessToken,
+    data: { user },
   });
 };
 
@@ -45,87 +52,124 @@ interface SignupBody {
   email: string;
   username: string;
   password: string;
-  photo: string;
 }
-// SIGNUP FUNCTION
+
 export const signup: RequestHandler = catchAsync(
   async (req: CustomRequest<SignupBody>, res, next) => {
-    const newUser: {} = await User.create({
-      email: req.body.email,
-      password: req.body.password,
-      username: req.body.username,
+    const { email, username, password } = req.body;
+
+    if (!email || !username || !password) {
+      return next(
+        new AppError("Username, email and password are required", 400)
+      );
+    }
+
+    if (password.length < 8) {
+      return next(new AppError("Password must be at least 8 characters", 400));
+    }
+
+    const { data, error } = await supabaseAuth.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username },
+      },
     });
-    createSendToken(newUser, 201, req, res);
+
+    if (error) {
+      if (error.message.includes("already registered")) {
+        return next(
+          new AppError("Duplicate email. Please use another value!", 500)
+        );
+      }
+      return next(new AppError(error.message, 400));
+    }
+
+    if (!data.session || !data.user) {
+      return next(
+        new AppError(
+          "Signup successful. Please confirm your email if required by your Supabase project settings.",
+          201
+        )
+      );
+    }
+
+    await createSendToken(
+      data.session.access_token,
+      data.session.refresh_token,
+      data.user.id,
+      201,
+      req,
+      res
+    );
   }
 );
 
-// LOGIN FUNCTION
 export const login: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
     const { email, password } = req.body;
-    // 1. Check If email Or Pass is exist
+
     if (!email || !password) {
       return next(new AppError("Please provide email and password!", 400));
     }
-    // 2. Check If User Exist & password is correct
-    const user = await User.findOne({ email }).select("+password");
-    if (!user || !(await user.correctPassword(password, user.password))) {
+
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.session || !data.user) {
       return next(new AppError("Incorrect email or password", 401));
     }
-    // 3. Send Token if every thing is okay
-    createSendToken(user, 200, req, res);
+
+    await createSendToken(
+      data.session.access_token,
+      data.session.refresh_token,
+      data.user.id,
+      200,
+      req,
+      res
+    );
   }
 );
 
-export interface DecodedToken extends JwtPayload {
-  id: string;
-  iat: number;
-  exp: number;
-}
-
-const jwtVerifyPromisified = (token: string, secret: string) => {
-  return new Promise((resolve, reject) => {
-    verifyJWT(token, secret, {}, (err, payload) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(payload);
-      }
-    });
-  });
-};
-
 export const protect: RequestHandler = catchAsync(
   async (req: CustomRequest, res: Response, next) => {
-    // 1) check if token is there and if it exists
-    let token: string | undefined = req.cookies.jwt;
+    const token: string | undefined = req.cookies.jwt;
 
     if (!token) {
       return next(new AppError("please login to access this route", 401));
     }
 
-    // 2) Verify Token
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
 
-    const decoded = (await jwtVerifyPromisified(
-      token,
-      process.env.JWT_SECRET
-    )) as DecodedToken;
+    if (error || !data.user) {
+      return next(new AppError("please login to access this route", 401));
+    }
 
-    // 3) check if user exist
-    const currentUser = (await User.findById(decoded.id)) as IUser;
-    if (!currentUser) {
+    const profile = await getProfileById(data.user.id);
+    if (!profile) {
       return next(new AppError("please login to access this route", 404));
     }
-    req.user = currentUser;
 
+    req.user = profileToApiUser(profile);
+    req.accessToken = token;
     next();
   }
 );
 
 export const logout: RequestHandler = catchAsync(
   async (req: CustomRequest, res, next) => {
-    const user = req.user;
+    const token = req.cookies.jwt;
+    if (token) {
+      await supabaseAuth.auth.signOut();
+    }
+
     res.cookie("jwt", "", {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    });
+    res.cookie("refresh_token", "", {
       expires: new Date(Date.now() + 10 * 1000),
       httpOnly: true,
     });
@@ -133,7 +177,7 @@ export const logout: RequestHandler = catchAsync(
     res.status(200).json({
       status: "success",
       message: "logged out successfully",
-      user,
+      user: req.user,
     });
   }
 );
