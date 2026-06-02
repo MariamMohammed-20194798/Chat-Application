@@ -1,5 +1,5 @@
-import { supabaseAdmin } from "../lib/supabase";
-import { IProfile } from "../types/database";
+import { supabaseAdmin } from '../lib/supabase';
+import { IProfile } from '../types/database';
 
 export const getProfileById = async (id: string): Promise<IProfile | null> => {
   // Retry mechanism to handle trigger timing
@@ -9,9 +9,9 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
 
   while (retries < maxRetries) {
     const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("id", id)
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
       .single();
 
     if (!error && data) {
@@ -21,7 +21,7 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
     retries++;
     if (retries < maxRetries) {
       console.log(`Profile not found, retry ${retries}/${maxRetries} after ${delayMs}ms`);
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 
@@ -29,13 +29,11 @@ export const getProfileById = async (id: string): Promise<IProfile | null> => {
   return null;
 };
 
-export const getAllProfilesExcept = async (
-  excludeId: string
-): Promise<IProfile[]> => {
+export const getAllProfilesExcept = async (excludeId: string): Promise<IProfile[]> => {
   const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("id, username, email, photo, created_at")
-    .neq("id", excludeId);
+    .from('profiles')
+    .select('id, username, email, photo, created_at')
+    .neq('id', excludeId);
 
   if (error) throw error;
   return (data || []) as IProfile[];
@@ -43,12 +41,12 @@ export const getAllProfilesExcept = async (
 
 export const updateProfile = async (
   id: string,
-  updates: Partial<Pick<IProfile, "username" | "photo">>
+  updates: Partial<Pick<IProfile, 'username' | 'photo'>>,
 ): Promise<IProfile | null> => {
   const { data, error } = await supabaseAdmin
-    .from("profiles")
+    .from('profiles')
     .update(updates)
-    .eq("id", id)
+    .eq('id', id)
     .select()
     .single();
 
@@ -58,15 +56,15 @@ export const updateProfile = async (
 
 export const upsertPresence = async (
   userId: string,
-  isOnline: boolean
+  isOnline: boolean,
 ): Promise<void> => {
-  await supabaseAdmin.from("user_presence").upsert(
+  await supabaseAdmin.from('user_presence').upsert(
     {
       user_id: userId,
       is_online: isOnline,
       last_seen_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" }
+    { onConflict: 'user_id' },
   );
 };

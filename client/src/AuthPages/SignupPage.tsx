@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { RiChatSmile3Fill } from "react-icons/ri";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RiChatSmile3Fill } from 'react-icons/ri';
 
 import {
   Container,
@@ -11,53 +11,57 @@ import {
   Btn,
   Div,
   P,
-} from "./authPagesStyled";
-import instance from "../axios";
-import { useAuthorDataStore } from "../Storage/authorStorage";
-import io from "socket.io-client";
+} from './authPagesStyled';
+import instance from '../axios';
+import { useAuthorDataStore } from '../Storage/authorStorage';
+import io from 'socket.io-client';
 
-const socket = io("http://localhost:8000");
+const socket = io('http://localhost:8000');
 const SignupPage: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const nav = useNavigate();
   const setAuthor = useAuthorDataStore((state: any) => state.setAuthorData);
 
   const joinRoom = async (event: any) => {
     try {
       if (!username || !email || !password) {
-        setErrorMsg("Username, Email and Password Are Required.");
+        setErrorMsg('Username, Email and Password Are Required.');
         return;
       }
-      const res = await instance.post("users/signup", {
+      const res = await instance.post('users/signup', {
         username,
         email,
         password,
       });
-      if (res.data.status === "success") {
+      if (res.data.status === 'success') {
         const user = res.data.data.user;
-        socket.emit("userOnline", user);
-        socket.emit("userSignedUp", user);
+        socket.emit('userOnline', user);
+        socket.emit('userSignedUp', user);
         setAuthor(user);
-        nav("/", { replace: true });
+        nav('/', { replace: true });
       }
     } catch (err: any) {
       if (err.response) {
         if (err.response.status === 400) {
-          setErrorMsg("Username, Email and Password Are Required.");
+          setErrorMsg('Username, Email and Password Are Required.');
         } else if (err.response.status === 429) {
-          setErrorMsg("Too many signup attempts. Please wait a few minutes and try again.");
+          setErrorMsg(
+            'Too many signup attempts. Please wait a few minutes and try again.',
+          );
         } else if (err.response.status === 503) {
-          setErrorMsg("Cannot reach Supabase right now. Please try again later.");
+          setErrorMsg('Cannot reach Supabase right now. Please try again later.');
         } else if (err.response.status === 500) {
-          setErrorMsg("Duplicate Email. Please use another value!");
+          setErrorMsg('Duplicate Email. Please use another value!');
         } else {
-          setErrorMsg(err.response.data?.message || "An error occurred. Please try again later.");
+          setErrorMsg(
+            err.response.data?.message || 'An error occurred. Please try again later.',
+          );
         }
       } else {
-        setErrorMsg("An error occurred. Please try again later.");
+        setErrorMsg('An error occurred. Please try again later.');
       }
     }
   };
