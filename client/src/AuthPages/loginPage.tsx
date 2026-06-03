@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { RiChatSmile3Fill } from "react-icons/ri";
-import io from "socket.io-client";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RiChatSmile3Fill } from 'react-icons/ri';
+import io from 'socket.io-client';
 import {
   Container,
   Strong,
@@ -12,47 +12,51 @@ import {
   Div,
   P,
   DivSpinner,
-} from "./authPagesStyled";
-import { useAuthorDataStore } from "../Storage/authorStorage";
-import instance from "../axios";
-import { Spinner } from "../components/Spinner/spinner";
+} from './authPagesStyled';
+import { useAuthorDataStore } from '../Storage/authorStorage';
+import instance from '../axios';
+import { Spinner } from '../components/Spinner/spinner';
 
-const socket = io("http://localhost:8000");
+const socket = io('http://localhost:8000');
 
 const LoginPage: React.FC = () => {
   const nav = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setLoading] = useState(false);
   const setAuthor = useAuthorDataStore((state: any) => state.setAuthorData);
 
   const joinRoom = async (event: any) => {
     try {
       setLoading(false);
-      setErrorMsg("");
-      if (!email || !password) setErrorMsg("Email and Password Are Required.");
-      const res = await instance.post("users/login", {
+      setErrorMsg('');
+      if (!email || !password) setErrorMsg('Email and Password Are Required.');
+      const res = await instance.post('users/login', {
         email,
         password,
       });
 
-      if (res.data.status === "success") {
+      if (res.data.status === 'success') {
         const user = res.data.data.user;
-        socket.emit("userOnline", user);
+        socket.emit('userOnline', user);
         setAuthor(user);
-        nav("/", { replace: true });
+        nav('/', { replace: true });
         setLoading(true);
       }
     } catch (err: any) {
       if (err.response) {
         if (err.response.status === 400) {
-          setErrorMsg("Email and Password Are Required.");
+          setErrorMsg('Email and Password Are Required.');
         } else if (err.response.status === 401) {
-          setErrorMsg("Incorrect email or password.");
+          setErrorMsg(err.response.data?.message || 'Incorrect email or password.');
+        } else {
+          setErrorMsg(
+            err.response.data?.message || 'An error occurred. Please try again later.',
+          );
         }
       } else {
-        setErrorMsg("An error occurred. Please try again later.");
+        setErrorMsg('An error occurred. Please try again later.');
       }
     }
   };

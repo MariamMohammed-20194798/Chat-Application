@@ -26,12 +26,10 @@ const createSendToken = async (
 
   if (!profile) {
     console.error('Profile not found for user:', userId);
-    res
-      .status(500)
-      .json({
-        status: 'error',
-        message: 'User profile not found. Please try signing up again.',
-      });
+    res.status(500).json({
+      status: 'error',
+      message: 'User profile not found. Please try signing up again.',
+    });
     return;
   }
 
@@ -150,6 +148,11 @@ export const signup: RequestHandler = catchAsync(
 export const login: RequestHandler = catchAsync(async (req: CustomRequest, res, next) => {
   const { email, password } = req.body;
 
+  console.log('Login request body:', {
+    email,
+    passwordLength: password?.length,
+  });
+
   if (!email || !password) {
     return next(new AppError('Please provide email and password!', 400));
   }
@@ -160,6 +163,25 @@ export const login: RequestHandler = catchAsync(async (req: CustomRequest, res, 
   });
 
   if (error || !data.session || !data.user) {
+    console.error('Supabase login failed:', {
+      email,
+      error: {
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        name: error?.name,
+      },
+    });
+
+    if (error?.code === 'email_not_confirmed') {
+      return next(
+        new AppError(
+          'Email not confirmed. Please check your inbox and confirm your email before logging in.',
+          401,
+        ),
+      );
+    }
+
     return next(new AppError('Incorrect email or password', 401));
   }
 

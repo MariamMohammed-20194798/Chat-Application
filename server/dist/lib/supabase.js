@@ -1,10 +1,11 @@
 "use strict";
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectDatabase = exports.supabaseAuth = exports.supabaseAdmin = void 0;
 const supabase_js_1 = require("@supabase/supabase-js");
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = (_a = process.env.SUPABASE_URL) === null || _a === void 0 ? void 0 : _a.trim();
+const supabaseServiceKey = (_b = process.env.SUPABASE_SERVICE_ROLE_KEY) === null || _b === void 0 ? void 0 : _b.trim();
+const supabaseAnonKey = (_c = process.env.SUPABASE_ANON_KEY) === null || _c === void 0 ? void 0 : _c.trim();
 if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment");
 }
