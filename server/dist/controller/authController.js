@@ -16,9 +16,7 @@ const createSendToken = async (accessToken, refreshToken, userId, statusCode, re
     const profile = await (0, userService_1.getProfileById)(userId);
     if (!profile) {
         console.error('Profile not found for user:', userId);
-        res
-            .status(500)
-            .json({
+        res.status(500).json({
             status: 'error',
             message: 'User profile not found. Please try signing up again.',
         });
@@ -44,8 +42,10 @@ const createSendToken = async (accessToken, refreshToken, userId, statusCode, re
     });
 };
 exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    var _a;
-    const { email, username, password } = req.body;
+    var _a, _b, _c, _d;
+    const email = (_a = req.body.email) === null || _a === void 0 ? void 0 : _a.trim().toLowerCase();
+    const username = (_b = req.body.username) === null || _b === void 0 ? void 0 : _b.trim();
+    const { password } = req.body;
     console.log('Signup request body:', {
         email,
         username,
@@ -72,25 +72,32 @@ exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     });
     if (error) {
         console.error('Supabase signup error:', error);
-        if (error.code === 'over_email_send_rate_limit' || error.status === 429) {
-            return next(new appError_1.AppError('Too many signup attempts. Please wait a few minutes and try again.', 429));
-        }
         if (error.status === 0 || error.name === 'AuthRetryableFetchError') {
             return next(new appError_1.AppError('Unable to connect to Supabase. Please check your network or try again later.', 503));
         }
-        if (error.message.includes('already registered')) {
-            return next(new appError_1.AppError('Duplicate email. Please use another value!', 500));
+        if (error.code === 'unexpected_failure' &&
+            error.message.toLowerCase().includes('confirmation email')) {
+            return next(new appError_1.AppError('Supabase could not send the confirmation email. Check the Custom SMTP settings and verified sender in Supabase.', 502));
         }
-        return next(new appError_1.AppError(error.message, 400));
+        if (error.message.includes('already registered')) {
+            return next(new appError_1.AppError('Duplicate email. Please use another value!', 409));
+        }
+        return next(new appError_1.AppError(error.message, error.status || 400));
     }
-    console.log('Supabase signup successful, user ID:', (_a = data.user) === null || _a === void 0 ? void 0 : _a.id);
+    console.log('Supabase signup successful, user ID:', (_c = data.user) === null || _c === void 0 ? void 0 : _c.id);
+    // Supabase hides whether an email exists when email enumeration protection is enabled.
+    if (data.user && ((_d = data.user.identities) === null || _d === void 0 ? void 0 : _d.length) === 0) {
+        return next(new appError_1.AppError('Duplicate email. Please use another value!', 409));
+    }
     if (!data.session || !data.user) {
         return next(new appError_1.AppError('Signup successful. Please confirm your email if required by your Supabase project settings.', 201));
     }
     await createSendToken(data.session.access_token, data.session.refresh_token, data.user.id, 201, req, res);
 });
 exports.login = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
-    const { email, password } = req.body;
+    var _a;
+    const email = (_a = req.body.email) === null || _a === void 0 ? void 0 : _a.trim().toLowerCase();
+    const { password } = req.body;
     console.log('Login request body:', {
         email,
         passwordLength: password === null || password === void 0 ? void 0 : password.length,

@@ -65,7 +65,9 @@ interface SignupBody {
 
 export const signup: RequestHandler = catchAsync(
   async (req: CustomRequest<SignupBody>, res, next) => {
-    const { email, username, password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const username = req.body.username?.trim();
+    const { password } = req.body;
 
     console.log('Signup request body:', {
       email,
@@ -98,15 +100,6 @@ export const signup: RequestHandler = catchAsync(
     if (error) {
       console.error('Supabase signup error:', error);
 
-      if (error.code === 'over_email_send_rate_limit' || error.status === 429) {
-        return next(
-          new AppError(
-            'Too many signup attempts. Please wait a few minutes and try again.',
-            429,
-          ),
-        );
-      }
-
       if (error.status === 0 || error.name === 'AuthRetryableFetchError') {
         return next(
           new AppError(
@@ -116,14 +109,31 @@ export const signup: RequestHandler = catchAsync(
         );
       }
 
-      if (error.message.includes('already registered')) {
-        return next(new AppError('Duplicate email. Please use another value!', 500));
+      if (
+        error.code === 'unexpected_failure' &&
+        error.message.toLowerCase().includes('confirmation email')
+      ) {
+        return next(
+          new AppError(
+            'Supabase could not send the confirmation email. Check the Custom SMTP settings and verified sender in Supabase.',
+            502,
+          ),
+        );
       }
 
-      return next(new AppError(error.message, 400));
+      if (error.message.includes('already registered')) {
+        return next(new AppError('Duplicate email. Please use another value!', 409));
+      }
+
+      return next(new AppError(error.message, error.status || 400));
     }
 
     console.log('Supabase signup successful, user ID:', data.user?.id);
+
+    // Supabase hides whether an email exists when email enumeration protection is enabled.
+    if (data.user && data.user.identities?.length === 0) {
+      return next(new AppError('Duplicate email. Please use another value!', 409));
+    }
 
     if (!data.session || !data.user) {
       return next(
@@ -146,7 +156,8 @@ export const signup: RequestHandler = catchAsync(
 );
 
 export const login: RequestHandler = catchAsync(async (req: CustomRequest, res, next) => {
-  const { email, password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
+  const { password } = req.body;
 
   console.log('Login request body:', {
     email,

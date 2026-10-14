@@ -26,8 +26,30 @@ supabase db push
 In **Authentication → Providers → Email**:
 
 - Enable Email provider.
-- For development, **disable “Confirm email”** so signup/login return a session immediately.
+- Keep **Confirm email** enabled when testing email verification.
 - Set **Site URL** to `http://localhost:3000`.
+
+### Resend Custom SMTP
+
+Supabase Auth sends confirmation emails. The Express server only calls
+`supabase.auth.signUp()` and must not send a second confirmation email.
+
+In **Project Settings → Authentication → SMTP Settings**, enable Custom SMTP
+and enter the Resend SMTP credentials:
+
+```text
+Host: smtp.resend.com
+Port: 465 (SSL) or 587 (STARTTLS)
+Username: resend
+Password: your RESEND_API_KEY
+Sender email: a verified Resend domain address
+Sender name: Chatty
+```
+
+The `RESEND_API_KEY` in `server/.env` is kept for deployment configuration,
+but hosted Supabase does not read your Express environment file. The same key
+must be entered in Supabase Custom SMTP settings. Add and verify the sender
+domain in Resend before testing Gmail delivery.
 
 ## 4. Server environment
 
@@ -39,6 +61,7 @@ SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 CLIENT_URL=http://localhost:3000
 JWT_COOKIE_EXPIRES_IN=90
+RESEND_API_KEY=re_...
 CLOUD_NAME=...
 API_KEY=...
 API_SECRET=...
