@@ -7,10 +7,10 @@ import cookieParser from "cookie-parser";
 import { router as userRouter } from "./routers/userRouter";
 import { router as roomRoutes } from "./routers/roomRoutes";
 import globalErrorHandler from "./controller/errorController";
+import { handleSendEmailHook } from "./controller/sendEmailHookController";
 
 export const app = express();
 
-app.use(express.json());
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3000",
@@ -18,6 +18,26 @@ app.use(
   })
 );
 app.options("*", cors());
+
+const sendEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { message: "Too many email requests. Please try again later." },
+  },
+});
+
+// Raw body is required to verify the Standard Webhooks signature.
+app.post(
+  "/api/v1/auth/send-email",
+  sendEmailLimiter,
+  express.raw({ type: () => true, limit: "100kb" }),
+  handleSendEmailHook,
+);
+
+app.use(express.json());
 
 const limiter = rateLimit({
   max: 100,

@@ -94,6 +94,7 @@ export const signup: RequestHandler = catchAsync(
       password,
       options: {
         data: { username },
+        emailRedirectTo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/login`,
       },
     });
 
@@ -115,7 +116,7 @@ export const signup: RequestHandler = catchAsync(
       ) {
         return next(
           new AppError(
-            'Supabase could not send the confirmation email. Check the Custom SMTP settings and verified sender in Supabase.',
+            'Could not send the confirmation email. Check the Send Email Hook URL, hook secret, and SMTP settings.',
             502,
           ),
         );
@@ -136,12 +137,13 @@ export const signup: RequestHandler = catchAsync(
     }
 
     if (!data.session || !data.user) {
-      return next(
-        new AppError(
-          'Signup successful. Please confirm your email if required by your Supabase project settings.',
-          201,
-        ),
-      );
+      res.status(201).json({
+        status: 'success',
+        requiresEmailConfirmation: true,
+        message:
+          'Your account is ready. Check your inbox to confirm your email before signing in.',
+      });
+      return;
     }
 
     await createSendToken(
@@ -251,6 +253,81 @@ export const logout: RequestHandler = catchAsync(
       status: 'success',
       message: 'logged out successfully',
       user: req.user,
+    });
+  },
+);
+
+export const forgotPassword: RequestHandler = catchAsync(
+  async (req: CustomRequest, res, next) => {
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email) {
+      return next(new AppError('Please provide your email address', 400));
+    }
+
+    const redirectTo = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password`;
+    const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+
+    if (error) {
+      console.error('Password reset request failed:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+      });
+      return next(
+        new AppError(
+          'Unable to send a password reset email right now. Please try again later.',
+          error.status || 502,
+        ),
+      );
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message:
+        'If that email is registered, a password reset link has been sent.',
+    });
+  },
+);
+
+export const resetPassword: RequestHandler = catchAsync(
+  async (req: CustomRequest, res, next) => {
+    const password = req.body.password as string | undefined;
+    const headerToken = req.headers.authorization?.startsWith('Bearer ')
+      ? req.headers.authorization.split(' ')[1]
+      : undefined;
+    const token = headerToken || (req.body.accessToken as string | undefined);
+
+    if (!password || password.length < 8) {
+      return next(new AppError('Password must be at least 8 characters', 400));
+    }
+
+    if (!token) {
+      return next(
+        new AppError('Invalid or expired reset link. Please request a new one.', 401),
+      );
+    }
+
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) {
+      return next(
+        new AppError('Invalid or expired reset link. Please request a new one.', 401),
+      );
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      data.user.id,
+      { password },
+    );
+
+    if (updateError) {
+      return next(new AppError(updateError.message, updateError.status || 400));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password updated. You can now sign in with your new password.',
     });
   },
 );

@@ -1,6 +1,8 @@
 import React, { useEffect } from "react";
 import LoginPage from "./AuthPages/loginPage";
 import SignupPage from "./AuthPages/SignupPage";
+import ForgotPasswordPage from "./AuthPages/ForgotPasswordPage";
+import ResetPasswordPage from "./AuthPages/ResetPasswordPage";
 import Container1 from "./components/Containers/Container1";
 import { Routes, Route } from "react-router-dom";
 import Container2 from "./components/Containers/Container2";
@@ -43,6 +45,8 @@ const App: React.FC = () => {
             <>
               <Route path="/login" index element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </>
           ) : null}
           <Route

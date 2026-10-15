@@ -169,6 +169,9 @@ const LoginPage: React.FC = () => {
       </AuthForm>
 
       <Text>
+        Forgot your password? <LinkDiv to="/forgot-password">Reset it</LinkDiv>
+      </Text>
+      <Text>
         New to Chatty? <LinkDiv to="/signup">Create an account</LinkDiv>
       </Text>
       <SecurityNote>

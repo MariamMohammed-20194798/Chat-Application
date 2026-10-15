@@ -1,6 +1,6 @@
 # Supabase Migration Setup
 
-This project uses **Supabase PostgreSQL**, **Supabase Auth**, and **Socket.IO** (messages/presence). Supabase Realtime is enabled on the `messages` table for optional client subscriptions.
+This project uses **Supabase PostgreSQL**, **Supabase Auth**, and **Socket.IO** (messages/presence). Authentication emails are sent with **Nodemailer** from the Express server after Supabase calls the **Send Email Hook**.
 
 ## 1. Create a Supabase project
 
@@ -25,31 +25,46 @@ supabase db push
 
 In **Authentication → Providers → Email**:
 
-- Enable Email provider.
-- Keep **Confirm email** enabled when testing email verification.
-- Set **Site URL** to `http://localhost:3000`.
+- Enable the Email provider.
+- Keep **Confirm email** enabled.
+- Secure email change can stay enabled.
 
-### Resend Custom SMTP
+In **Authentication → URL Configuration**:
 
-Supabase Auth sends confirmation emails. The Express server only calls
-`supabase.auth.signUp()` and must not send a second confirmation email.
+- **Site URL:** `http://localhost:3000`
+- **Redirect URLs:**  
+  `http://localhost:3000/**`  
+  `http://localhost:3000/login`  
+  `http://localhost:3000/reset-password`
 
-In **Project Settings → Authentication → SMTP Settings**, enable Custom SMTP
-and enter the Resend SMTP credentials:
+In production, replace those with your HTTPS frontend origin.
 
-```text
-Host: smtp.resend.com
-Port: 465 (SSL) or 587 (STARTTLS)
-Username: resend
-Password: your RESEND_API_KEY
-Sender email: a verified Resend domain address
-Sender name: Chatty
+### Send Email Hook (required for Nodemailer)
+
+Do **not** send a second confirmation email from `signUp()`. Supabase still creates the user and the confirmation token. The hook only replaces Supabase’s built-in mailer.
+
+1. Deploy or tunnel the Express API so it has a public HTTPS URL.
+2. Open **Authentication → Hooks** (sometimes listed as **Auth Hooks**).
+3. Enable **Send Email hook**.
+4. Choose **HTTPS** (not Postgres).
+5. Set the URL to:
+
+   ```text
+   https://YOUR-PUBLIC-API-HOST/api/v1/auth/send-email
+   ```
+
+6. Generate the hook secret and copy the full value (`v1,whsec_...`) into `server/.env` as `SEND_EMAIL_HOOK_SECRET`.
+7. Leave **Custom SMTP** disabled while the hook is enabled. The hook replaces built-in delivery. If both are misconfigured, signup fails with a confirmation-email error.
+
+Local development: hosted Supabase cannot call localhost. Run a tunnel:
+
+```bash
+npx cloudflared tunnel --url http://localhost:8000
 ```
 
-The `RESEND_API_KEY` in `server/.env` is kept for deployment configuration,
-but hosted Supabase does not read your Express environment file. The same key
-must be entered in Supabase Custom SMTP settings. Add and verify the sender
-domain in Resend before testing Gmail delivery.
+Use the `https://*.trycloudflare.com` (or ngrok) origin in the hook URL and keep the tunnel process running while you test.
+
+The hook payload is verified with [Standard Webhooks](https://github.com/standard-webhooks/standard-webhooks). Unsigned callers cannot send mail. Confirmation OTPs and `token_hash` values are one-time secrets owned by Supabase; this app does not store or reuse them.
 
 ## 4. Server environment
 
@@ -61,11 +76,20 @@ SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 CLIENT_URL=http://localhost:3000
 JWT_COOKIE_EXPIRES_IN=90
-RESEND_API_KEY=re_...
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=you@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=you@gmail.com
+SMTP_FROM_NAME=Chatty
+SEND_EMAIL_HOOK_SECRET=v1,whsec_...
 CLOUD_NAME=...
 API_KEY=...
 API_SECRET=...
 ```
+
+Gmail SMTP is for development. Before production, switch SMTP to a transactional provider and verify the sending domain with that provider. Nodemailer does not provide free delivery on its own.
 
 Remove old MongoDB variables (`DATABASE`, `DATABASE_PASSWORD`) from `.env` unless running the migration script.
 
@@ -132,6 +156,10 @@ REST responses still use MongoDB-style `_id` fields so the React client requires
 | Issue | Fix |
 |-------|-----|
 | `profile not found` after signup | Run migrations; check `handle_new_user` trigger |
-| 401 on protected routes | Confirm email disabled or user confirmed; check `jwt` cookie |
+| 401 on protected routes | Confirm email, then log in; check the `jwt` cookie |
+| Signup fails sending confirmation email | Public hook URL, matching `SEND_EMAIL_HOOK_SECRET`, working SMTP |
+| Hook 401 | Raw JSON body + Standard Webhooks headers; secret includes `v1,whsec_` |
+| Mail never arrives | Gmail App Password / provider domain verification; check spam |
+| Reset page missing token | Add `/reset-password` to redirect URLs; open the latest email link |
 | Room not found | Ensure both users exist in `profiles` |
 | Realtime not firing | Enable Replication for `messages` in Database → Publications |

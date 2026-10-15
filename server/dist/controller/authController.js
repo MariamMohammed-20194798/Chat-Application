@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.protect = exports.login = exports.signup = void 0;
+exports.resetPassword = exports.forgotPassword = exports.logout = exports.protect = exports.login = exports.signup = void 0;
 const catchAsync_1 = require("../utils/catchAsync");
 const appError_1 = require("../utils/appError");
 const supabase_1 = require("../lib/supabase");
@@ -68,6 +68,7 @@ exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         password,
         options: {
             data: { username },
+            emailRedirectTo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/login`,
         },
     });
     if (error) {
@@ -77,7 +78,7 @@ exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         }
         if (error.code === 'unexpected_failure' &&
             error.message.toLowerCase().includes('confirmation email')) {
-            return next(new appError_1.AppError('Supabase could not send the confirmation email. Check the Custom SMTP settings and verified sender in Supabase.', 502));
+            return next(new appError_1.AppError('Could not send the confirmation email. Check the Send Email Hook URL, hook secret, and SMTP settings.', 502));
         }
         if (error.message.includes('already registered')) {
             return next(new appError_1.AppError('Duplicate email. Please use another value!', 409));
@@ -90,7 +91,12 @@ exports.signup = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         return next(new appError_1.AppError('Duplicate email. Please use another value!', 409));
     }
     if (!data.session || !data.user) {
-        return next(new appError_1.AppError('Signup successful. Please confirm your email if required by your Supabase project settings.', 201));
+        res.status(201).json({
+            status: 'success',
+            requiresEmailConfirmation: true,
+            message: 'Your account is ready. Check your inbox to confirm your email before signing in.',
+        });
+        return;
     }
     await createSendToken(data.session.access_token, data.session.refresh_token, data.user.id, 201, req, res);
 });
@@ -160,5 +166,54 @@ exports.logout = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
         status: 'success',
         message: 'logged out successfully',
         user: req.user,
+    });
+});
+exports.forgotPassword = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+    var _a;
+    const email = (_a = req.body.email) === null || _a === void 0 ? void 0 : _a.trim().toLowerCase();
+    if (!email) {
+        return next(new appError_1.AppError('Please provide your email address', 400));
+    }
+    const redirectTo = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password`;
+    const { error } = await supabase_1.supabaseAuth.auth.resetPasswordForEmail(email, {
+        redirectTo,
+    });
+    if (error) {
+        console.error('Password reset request failed:', {
+            message: error.message,
+            status: error.status,
+            code: error.code,
+        });
+        return next(new appError_1.AppError('Unable to send a password reset email right now. Please try again later.', error.status || 502));
+    }
+    res.status(200).json({
+        status: 'success',
+        message: 'If that email is registered, a password reset link has been sent.',
+    });
+});
+exports.resetPassword = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
+    var _a;
+    const password = req.body.password;
+    const headerToken = ((_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.startsWith('Bearer '))
+        ? req.headers.authorization.split(' ')[1]
+        : undefined;
+    const token = headerToken || req.body.accessToken;
+    if (!password || password.length < 8) {
+        return next(new appError_1.AppError('Password must be at least 8 characters', 400));
+    }
+    if (!token) {
+        return next(new appError_1.AppError('Invalid or expired reset link. Please request a new one.', 401));
+    }
+    const { data, error } = await supabase_1.supabaseAdmin.auth.getUser(token);
+    if (error || !data.user) {
+        return next(new appError_1.AppError('Invalid or expired reset link. Please request a new one.', 401));
+    }
+    const { error: updateError } = await supabase_1.supabaseAdmin.auth.admin.updateUserById(data.user.id, { password });
+    if (updateError) {
+        return next(new appError_1.AppError(updateError.message, updateError.status || 400));
+    }
+    res.status(200).json({
+        status: 'success',
+        message: 'Password updated. You can now sign in with your new password.',
     });
 });

@@ -80,17 +80,17 @@ const SignupPage: React.FC = () => {
         password,
       });
 
-      if (res.data.status === "success") {
+      if (res.data.requiresEmailConfirmation) {
+        setSuccessMsg(
+          res.data.message ||
+            "Your account is ready. Please check your inbox to confirm your email before signing in.",
+        );
+      } else if (res.data.status === "success") {
         const user = res.data.data.user;
         socket.emit("userOnline", user);
         socket.emit("userSignedUp", user);
         setAuthor(user);
         nav("/", { replace: true });
-      } else if (res.status === 201) {
-        setSuccessMsg(
-          res.data.message ||
-            "Your account is ready. Please check your inbox to confirm your email before signing in.",
-        );
       } else {
         setErrorMsg("We couldn’t create your account. Please try again.");
       }
@@ -104,7 +104,8 @@ const SignupPage: React.FC = () => {
           );
         } else if (err.response.status === 429 || err.response.status === 502) {
           setErrorMsg(
-            "Supabase couldn’t send the confirmation email right now. Please try again later.",
+            responseMessage ||
+              "We couldn’t send the confirmation email right now. Please try again later.",
           );
         } else if (err.response.status === 503) {
           setErrorMsg("Cannot reach Supabase right now. Please try again later.");
